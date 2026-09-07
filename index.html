@@ -13,7 +13,7 @@
             --border: #e2e8f0;
             
             /* Schema de culori actualizată */
-            --cat-health: #F08209;    /* Noua nuanță: Portocaliu 75% */
+            --cat-health: #F08209;    /* Nuanța: Portocaliu 75% */
             --cat-personal: #3b82f6;  /* Albastru Regal */
             --cat-work: #8b5cf6;      /* Violet Intens */
         }
@@ -47,7 +47,7 @@
             margin-bottom: 25px;
         }
 
-        /* Aliniere fixă pe coloane utilizând Grid */
+        /* Aliniere fixă pe 3 coloane utilizând CSS Grid */
         .grid-layout {
             display: grid;
             grid-template-columns: 130px 1fr 90px;
@@ -233,23 +233,24 @@
 
 <script>
     const tasks = [
-        { id: "t1", category: "health", interval: "06:00 - 06:30", name: "Trezirea" },
-        { id: "t2", category: "health", interval: "06:30 - 07:30", name: "Mers pe jos 1h" },
-        { id: "t3", category: "personal", interval: "07:30 - 08:00", name: "Pregatirea pentru munca (dush)" },
-        { id: "t4", category: "work", interval: "08:00 - 16:00", name: "Munca" },
-        { id: "t5", category: "personal", interval: "16:00 - 17:00", name: "Pregatirea mesei / Mancat" },
-        { id: "t6", category: "health", interval: "17:00 - 17:15", name: "Exercitii glezne (seria 1)" },
-        { id: "t7", category: "health", interval: "17:15 - 17:30", name: "Exercitii glezne (seria 2)" },
-        { id: "t8", category: "health", interval: "17:30 - 17:45", name: "Exercitii glezne (seria 3)" },
-        { id: "t9", category: "health", interval: "17:45 - 18:00", name: "Exercitii calisthenics" },
-        { id: "t10", category: "health", interval: "18:00 - 18:15", name: "Exercitii musculatura (tractiuni)" },
-        { id: "t11", category: "health", interval: "18:15 - 18:30", name: "Exercitii Kegel" },
-        { id: "t12", category: "personal", interval: "18:30 - 20:00", name: "Vlad" },
-        { id: "t13", category: "personal", interval: "20:00 - 21:00", name: "Pregatirea mesei / Mancat" },
-        { id: "t14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
+        { id: "task_1", category: "health", interval: "06:00 - 06:30", name: "Trezirea" },
+        { id: "task_2", category: "health", interval: "06:30 - 07:30", name: "Mers pe jos 1h" },
+        { id: "task_3", category: "personal", interval: "07:30 - 08:00", name: "Pregatirea pentru munca (dush)" },
+        { id: "task_4", category: "work", interval: "08:00 - 16:00", name: "Munca" },
+        { id: "task_5", category: "personal", interval: "16:00 - 17:00", name: "Pregatirea mesei / Mancat" },
+        { id: "task_6", category: "health", interval: "17:00 - 17:15", name: "Exercitii glezne (seria 1)" },
+        { id: "task_7", category: "health", interval: "17:15 - 17:30", name: "Exercitii glezne (seria 2)" },
+        { id: "task_8", category: "health", interval: "17:30 - 17:45", name: "Exercitii glezne (seria 3)" },
+        { id: "task_9", category: "health", interval: "17:45 - 18:00", name: "Exercitii calisthenics" },
+        { id: "task_10", category: "health", interval: "18:00 - 18:15", name: "Exercitii musculatura (tractiuni)" },
+        { id: "task_11", category: "health", interval: "18:15 - 18:30", name: "Exercitii Kegel" },
+        { id: "task_12", category: "personal", interval: "18:30 - 20:00", name: "Vlad" },
+        { id: "task_13", category: "personal", interval: "20:00 - 21:00", name: "Pregatirea mesei / Mancat" },
+        { id: "task_14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
     ];
 
-    let savedData = JSON.parse(localStorage.getItem('my_chrono_routine_v5')) || {
+    // Cheia de stocare actualizată pentru a evita conflictele din cache-ul vechi
+    let savedData = JSON.parse(localStorage.getItem('my_chrono_routine_final_v1')) || {
         bife: {},
         ultimaData: ""
     };
@@ -267,7 +268,7 @@
         }
         
         savedData.ultimaData = dataAzi;
-        localStorage.setItem('my_chrono_routine_v5', JSON.stringify(savedData));
+        localStorage.setItem('my_chrono_routine_final_v1', JSON.stringify(savedData));
 
         const container = document.getElementById('tasksListContainer');
         container.innerHTML = '';
@@ -281,10 +282,3 @@
                 '<div class="time-box">' + task.interval + '</div>' +
                 '<div class="task-name">' + task.name + '</div>' +
                 '<div class="check-box-wrapper">' +
-                    '<input type="checkbox" class="task-check" data-id="' + task.id + '"' + (isChecked ? ' checked' : '') + '>' +
-                '</div>' +
-            '</div>';
-        });
-
-        container.innerHTML = html;
-
