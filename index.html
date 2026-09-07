@@ -187,7 +187,7 @@
         <div class="chart-container" id="healthChart"></div>
     </div>
 
-    <div class="source-badge" id="sourceBadge">Sursă date: Locală (Siguranță)</div>
+    <div class="source-badge" id="sourceBadge">Sursă date: Locală (Garantată)</div>
 
 <script>
     const GOOGLE_SHEET_CSV_URL = "https://google.com";
@@ -214,13 +214,12 @@
     const categoriesContainer = document.getElementById('categoriesContainer');
     const sourceBadge = document.getElementById('sourceBadge');
 
-    // Generare dată stabilă curentă
     const d = new Date();
     const AZI_STANDARD = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
     datePicker.value = AZI_STANDARD;
 
-    function luareIstoric() { return JSON.parse(localStorage.getItem('routine_history_v14')) || {}; }
-    function salvareIstoric(ist) { localStorage.setItem('routine_history_v14', JSON.stringify(ist)); }
+    function luareIstoric() { return JSON.parse(localStorage.getItem('routine_history_v15')) || {}; }
+    function salvareIstoric(ist) { localStorage.setItem('routine_history_v15', JSON.stringify(ist)); }
 
     function renderInterfata() {
         const dataSelectata = datePicker.value || AZI_STANDARD;
@@ -247,3 +246,4 @@
                 const isChecked = stareaZilei[task.id] || false;
                 let statusText = "Not started";
                 
+                if (isChecked) {
