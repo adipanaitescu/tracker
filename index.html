@@ -12,7 +12,7 @@
             --text-muted: #64748b;
             --border: #e2e8f0;
             
-            /* Schema de culori solicitată */
+            /* Schema de culori stabilita */
             --cat-health: #F08209;    /* Portocaliu 75% */
             --cat-personal: #3b82f6;  /* Albastru Regal */
             --cat-work: #8b5cf6;      /* Violet Intens */
@@ -47,7 +47,7 @@
             margin-bottom: 25px;
         }
 
-        /* Structură fixă pe 3 coloane prin CSS Grid */
+        /* Structura CSS Grid aliniata fix pe 3 coloane */
         .grid-layout {
             display: grid;
             grid-template-columns: 130px 1fr 90px;
@@ -81,7 +81,7 @@
             white-space: nowrap;
         }
 
-        /* Rândurile de task-uri */
+        /* Randurile de task-uri */
         .task-row {
             padding: 14px 0;
             border-bottom: 1px solid var(--border);
@@ -92,7 +92,6 @@
             border-bottom: none;
         }
 
-        /* Aliniere conținut celule */
         .time-box {
             font-size: 0.85rem;
             font-weight: 700;
@@ -112,7 +111,7 @@
             align-items: center;
         }
 
-        /* Culori specifice pe categorii */
+        /* Culori text pe categorii */
         .task-row.type-health .time-box,
         .task-row.type-health .task-name { color: var(--cat-health); }
         .task-row.type-work .time-box,
@@ -120,7 +119,7 @@
         .task-row.type-personal .time-box,
         .task-row.type-personal .task-name { color: var(--cat-personal); }
 
-        /* Indicator lateral */
+        /* Indicator lateral stanga */
         .task-row::before {
             content: '';
             position: absolute;
@@ -133,7 +132,7 @@
         .task-row.type-work::before { background-color: var(--cat-work); }
         .task-row.type-personal::before { background-color: var(--cat-personal); }
 
-        /* Stil când task-ul este bifat */
+        /* Efect taiere text cand e bifat */
         .task-row.done {
             background-color: #f8fafc;
             opacity: 0.5;
@@ -156,7 +155,7 @@
         .task-row.type-personal input[type="checkbox"] { accent-color: var(--cat-personal); }
         #checkAll { accent-color: #475569; }
 
-        /* Legendă */
+        /* Legenda */
         .legend-card {
             width: 100%;
             max-width: 468px;
@@ -217,7 +216,7 @@
             </div>
         </div>
         
-        <!-- Cele 14 task-uri scrise direct în HTML static (imun la erori) -->
+        <!-- Cele 14 task-uri statice scrise direct in cod HTML -->
         <div class="task-row grid-layout type-health" id="row_t1">
             <div class="time-box">06:00 - 06:30</div>
             <div class="task-name">Trezirea</div>
@@ -277,3 +276,4 @@
             <div class="time-box">18:30 - 20:00</div>
             <div class="task-name">Vlad</div>
             <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="t12"></div>
+        </div>
