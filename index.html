@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v06</title>
+    <title>Program Zilnic v07</title>
     <style>
         :root {
             --color-health: #F08209;
@@ -135,7 +135,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v06</h1>
+    <h1>Program Zilnic v07</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -151,9 +151,7 @@
             </div>
         </div>
         
-        <div id="tasks-body">
-            <!-- Eliminat mesajul de loading static pentru a evita blocajele vizuale -->
-        </div>
+        <div id="tasks-body"></div>
     </div>
 
     <div class="legend">
@@ -208,6 +206,11 @@
             initCheckboxesLogic();
         }
 
+        function cleanString(str) {
+            if (!str) return '';
+            return str.replace(/^"|"$/g, '').trim();
+        }
+
         function parseCSVSecure(text) {
             const lines = text.split(/\r?\n/);
             const parsedTasks = [];
@@ -216,7 +219,7 @@
                 const line = lines[i];
                 if (!line) continue;
 
-                let result = [];
+                let columns = [];
                 let current = '';
                 let inQuotes = false;
 
@@ -225,20 +228,20 @@
                     if (char === '"') {
                         inQuotes = !inQuotes;
                     } else if (char === ',' && !inQuotes) {
-                        result.push(current);
+                        columns.push(current);
                         current = '';
                     } else {
                         current += char;
                     }
                 }
-                result.push(current);
+                columns.push(current);
 
-                if (result.length >= 4) {
+                if (columns.length >= 4) {
                     parsedTasks.push({
-                        categorie: result[0].replace(/^"|"$/g, '').trim(),
-                        interval: result[1].replace(/^"|"$/g, '').trim(),
-                        task: result[2].replace(/^"|"$/g, '').trim(),
-                        oraAlerta: result[3].replace(/^"|"$/g, '').trim()
+                        categorie: cleanString(columns[0]),
+                        interval: cleanString(columns[1]),
+                        task: cleanString(columns[2]),
+                        oraAlerta: cleanString(columns[3])
                     });
                 }
             }
@@ -257,7 +260,7 @@
                     renderRows(tasks);
                 }
             } catch (error) {
-                console.warn("Eroare silentioasa retea. Structura locala ramane activa.");
+                console.warn("Eroare de rețea. Structura locală rămâne activă.");
             }
         }
 
@@ -269,3 +272,4 @@
             masterCheck.indeterminate = false;
 
             masterCheck.onclick = () => {
+                const isChecked = masterCheck.checked;
