@@ -12,7 +12,8 @@
             --text-muted: #64748b;
             --border: #e2e8f0;
             
-            --cat-health: #EA580C;    /* Portocaliu Mandarină */
+            /* Schema de culori actualizata */
+            --cat-health: #F5AB06;    /* Noua nuanta: Portocaliu 50% */
             --cat-personal: #3b82f6;  /* Albastru Regal */
             --cat-work: #8b5cf6;      /* Violet Intens */
         }
@@ -46,45 +47,6 @@
             margin-bottom: 25px;
         }
 
-        /* Stiluri pentru Capul de Tabel */
-        .table-header {
-            display: flex;
-            align-items: center;
-            padding: 14px 16px;
-            background-color: #f1f5f9;
-            border-bottom: 2px solid var(--border);
-            font-weight: bold;
-        }
-
-        .header-col {
-            text-align: center;
-            font-weight: 700;
-        }
-
-        .col-time {
-            min-width: 100px;
-        }
-
-        .col-name {
-            flex-grow: 1;
-            padding: 0 10px;
-        }
-
-        .col-check {
-            min-width: 70px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-
-        .check-all-label {
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
-
-        /* Stiluri pentru rândurile de task-uri */
         .task-row {
             display: flex;
             align-items: center;
@@ -97,15 +59,23 @@
             border-bottom: none;
         }
 
-        /* Culori text în funcție de tipul task-ului */
-        .task-row.type-health .time-box,
-        .task-row.type-health .task-name { color: var(--cat-health); }
-        .task-row.type-work .time-box,
-        .task-row.type-work .task-name { color: var(--cat-work); }
-        .task-row.type-personal .time-box,
-        .task-row.type-personal .task-name { color: var(--cat-personal); }
+        /* Culori text in functie de tipul task-ului */
+        .task-row.type-health .task-name,
+        .task-row.type-health .time-box {
+            color: var(--cat-health);
+        }
 
-        /* Indicator lateral */
+        .task-row.type-work .task-name,
+        .task-row.type-work .time-box {
+            color: var(--cat-work);
+        }
+
+        .task-row.type-personal .task-name,
+        .task-row.type-personal .time-box {
+            color: var(--cat-personal);
+        }
+
+        /* Indicator lateral pentru categorie */
         .task-row::before {
             content: '';
             position: absolute;
@@ -118,14 +88,14 @@
         .task-row.type-work::before { background-color: var(--cat-work); }
         .task-row.type-personal::before { background-color: var(--cat-personal); }
 
-        /* Stil când task-ul este bifat */
+        /* Stil cand task-ul este bifat (Done) */
         .task-row.done {
             background-color: #f8fafc;
             opacity: 0.5;
         }
 
-        .task-row.done .time-box,
-        .task-row.done .task-name {
+        .task-row.done .task-name,
+        .task-row.done .time-box {
             text-decoration: line-through !important;
             color: var(--text-muted) !important;
         }
@@ -134,7 +104,6 @@
             font-size: 0.85rem;
             font-weight: 700;
             min-width: 100px;
-            text-align: center;
         }
 
         .task-name {
@@ -142,13 +111,6 @@
             font-size: 0.95rem;
             font-weight: 600;
             padding: 0 10px;
-            text-align: center;
-        }
-
-        .check-box-wrapper {
-            min-width: 70px;
-            display: flex;
-            justify-content: center;
         }
 
         input[type="checkbox"] {
@@ -161,7 +123,7 @@
         .task-row.type-work input[type="checkbox"] { accent-color: var(--cat-work); }
         .task-row.type-personal input[type="checkbox"] { accent-color: var(--cat-personal); }
 
-        /* Stil Legendă */
+        /* Stil Legenda */
         .legend-card {
             width: 100%;
             max-width: 468px;
@@ -211,22 +173,11 @@
 
     <h1>Program Zilnic</h1>
 
-    <div class="task-container">
-        <!-- Cap de tabel -->
-        <div class="table-header">
-            <div class="header-col col-time">Ora</div>
-            <div class="header-col col-name">Task</div>
-            <div class="header-col col-check">
-                <span class="check-all-label">Check All</span>
-                <input type="checkbox" id="checkAll">
-            </div>
-        </div>
-        
-        <!-- Zona pentru rândurile de task-uri -->
-        <div id="tasksListContainer"></div>
+    <div class="task-container" id="tasksContainer">
+        <!-- Generat automat in ordine cronologica -->
     </div>
 
-    <!-- Legendă -->
+    <!-- Legenda sub tabel -->
     <div class="legend-card">
         <div class="legend-title">📋 Legendă Categorii</div>
         <div class="legend-items">
@@ -254,7 +205,7 @@
         { id: "t14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
     ];
 
-    let savedData = JSON.parse(localStorage.getItem('my_chrono_routine_v3')) || {
+    let savedData = JSON.parse(localStorage.getItem('my_routine_data_v4')) || {
         bife: {},
         ultimaData: ""
     };
@@ -272,9 +223,9 @@
         }
         
         savedData.ultimaData = dataAzi;
-        localStorage.setItem('my_chrono_routine_v3', JSON.stringify(savedData));
+        localStorage.setItem('my_routine_data_v4', JSON.stringify(savedData));
 
-        const container = document.getElementById('tasksListContainer');
+        const container = document.getElementById('tasksContainer');
         container.innerHTML = '';
         let html = '';
 
@@ -285,7 +236,7 @@
             html += '<div class="task-row type-' + task.category + doneClass + '">' +
                 '<div class="time-box">' + task.interval + '</div>' +
                 '<div class="task-name">' + task.name + '</div>' +
-                '<div class="check-box-wrapper">' +
+                '<div>' +
                     '<input type="checkbox" class="task-check" data-id="' + task.id + '"' + (isChecked ? ' checked' : '') + '>' +
                 '</div>' +
             '</div>';
@@ -293,3 +244,18 @@
 
         container.innerHTML = html;
 
+        document.querySelectorAll('.task-check').forEach(box => {
+            box.addEventListener('change', function(e) {
+                const tId = e.target.getAttribute('data-id');
+                savedData.bife[tId] = e.target.checked;
+                localStorage.setItem('my_routine_data_v4', JSON.stringify(savedData));
+                renderChronoApp(); 
+            });
+        });
+    }
+
+    setInterval(renderChronoApp, 60000);
+    renderChronoApp();
+</script>
+</body>
+</html>
