@@ -33,7 +33,7 @@
             font-weight: 700;
         }
 
-        /* --- BUTOANE DEZACTIVATE TEMPORAR (Comentate vizual) --- */
+        /* Butoane ascunse (comentate vizual) conform cerinței */
         .controls {
             display: none; 
         }
@@ -48,7 +48,7 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* Aliniere fixă pe 3 coloane prin CSS Grid */
+        /* Structură fixă pe 3 coloane CSS Grid */
         .grid-header, .grid-row {
             display: grid;
             grid-template-columns: 115px 1fr 65px;
@@ -82,7 +82,7 @@
             font-size: 0.95rem;
             line-height: 1.4;
             font-weight: 500;
-            text-align: center; /* Aliniere centrată pentru task, conform imaginii */
+            text-align: center;
         }
 
         .col-check {
@@ -98,7 +98,7 @@
             accent-color: #3b82f6;
         }
 
-        /* Margini stânga pentru identificarea categoriei (Schema de culori activă) */
+        /* Schema de culori aplicată pe text și marginea stângă */
         .cat-health { border-left: 4px solid var(--color-health); }
         .cat-health .col-time, .cat-health .col-task { color: var(--color-health); }
 
@@ -108,7 +108,7 @@
         .cat-personal { border-left: 4px solid var(--color-personal); }
         .cat-personal .col-time, .cat-personal .col-task { color: var(--color-personal); }
 
-        /* Efect de Gray-out și tăiere text la bifare (Done) */
+        /* Efect de rând tăiat și redus ca opacitate (Gray-out) la bifare */
         .grid-row.done {
             background-color: #fafafa;
             opacity: 0.4;
@@ -118,7 +118,7 @@
             color: var(--text-muted) !important;
         }
 
-        /* Legendă Culori */
+        /* Legendă */
         .legend {
             display: flex;
             gap: 15px;
@@ -150,7 +150,7 @@
 
     <h1>Program Zilnic</h1>
 
-    <!-- Butoane ascunse momentan (comentate prin logica CSS/JS) -->
+    <!-- Butoane de control reținute silențios în cod -->
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
         <button id="btn-push-auth">Notificări: Solicită</button>
@@ -165,13 +165,11 @@
             </div>
         </div>
         
-        <!-- Injectare dinamică din Google Sheets -->
         <div id="tasks-body">
             <div class="loading">Se încarcă cele 14 task-uri din Google Sheets...</div>
         </div>
     </div>
 
-    <!-- Legendă vizuală jos -->
     <div class="legend">
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-health)"></span> Sănătate & Sport</div>
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-work)"></span> Muncă / Carieră</div>
@@ -179,14 +177,12 @@
     </div>
 
     <script>
-        // Link-ul tău de publicare CSV
         const csvUrl = 'https://google.com';
         
         const masterCheck = document.getElementById('master-check');
         const tasksBody = document.getElementById('tasks-body');
         const notifiedHours = new Set();
 
-        // Normalizare ore pentru alerte viitoare (ex: din "6:00" în "06:00")
         function normalizeTime(timeStr) {
             if (!timeStr) return "";
             let clean = timeStr.trim();
@@ -196,40 +192,53 @@
             return clean;
         }
 
-        // PARSER AVANSAT REGEX (Rezolvă problema caracterelor speciale și a liniilor lipsă)
-        function parseCSV(text) {
-            const lines = text.split(/\r?\n/);
-            const result = [];
-            
-            // Începem de la 1 pentru a omite linia de cap de tabel din Sheets
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                // Regex inteligent care împarte corect coloanele chiar dacă textul conține spații sau caractere speciale
-                const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-                
-                // Curățăm ghilimelele reziduale generate de exportul Google Sheets
-                const cleanCols = (matches || []).map(col => col.replace(/^"|"$/g, '').trim());
+        // PARSER CSV SECURIZEAT: Separă coloanele corect ținând cont de ghilimele și caracterele din Google Sheets
+        function parseGoogleCSV(text) {
+            const lines = [];
+            let row = [""];
+            let inQuotes = false;
 
-                if (cleanCols.length >= 4) {
-                    result.push({
-                        categorie: cleanCols[0].toLowerCase(),
-                        interval: cleanCols[1],
-                        task: cleanCols[2],
-                        oraAlerta: normalizeTime(cleanCols[3])
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i];
+                let next = text[i+1];
+
+                if (c === '"') {
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } // Ghilimele dublate
+                    else { inQuotes = !inQuotes; }
+                } else if (c === ',' && !inQuotes) {
+                    row.push('');
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') { i++; }
+                    lines.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== '') { lines.push(row); }
+
+            // Conversie în array de obiecte mapate pe tabelul tău
+            const finalResult = [];
+            for (let j = 1; j < lines.length; j++) { // Sărim header-ul
+                const cols = lines[j];
+                if (cols.length >= 4 && cols[0].trim() !== "") {
+                    finalResult.push({
+                        categorie: cols[0].trim().toLowerCase(),
+                        interval: cols[1].trim(),
+                        task: cols[2].trim(),
+                        oraAlerta: normalizeTime(cols[3])
                     });
                 }
             }
-            return result;
+            return finalResult;
         }
 
-        // Încărcarea datelor live (SSOT)
+        // Încărcare SSOT din Google Sheets
         async function loadSheetData() {
             try {
                 const response = await fetch(csvUrl);
                 const csvText = await response.text();
-                const tasks = parseCSV(csvText);
+                const tasks = parseGoogleCSV(csvText);
                 
                 tasksBody.innerHTML = ''; 
                 
@@ -250,19 +259,18 @@
                 initCheckboxesLogic();
                 
             } catch (error) {
-                tasksBody.innerHTML = `<div class="loading" style="color: #ef4444;">Eroare de sincronizare cu Google Sheets.</div>`;
+                tasksBody.innerHTML = `<div class="loading" style="color: #ef4444;">Eroare de conexiune sau parsare la sincronizarea cu Google Sheets.</div>`;
                 console.error(error);
             }
         }
 
-        // LOGICA DE CHECKBOX: Check All și Stil de rând Done (Gray-out / Tăiat)
+        // Logică master-check (Check All) și individual-check (Mark as Done / Tăiere text)
         function initCheckboxesLogic() {
             const taskChecks = document.querySelectorAll('.task-check');
             
             masterCheck.checked = false;
             masterCheck.indeterminate = false;
 
-            // Logica buton master (Check All / Uncheck All)
             masterCheck.onclick = () => {
                 const isChecked = masterCheck.checked;
                 taskChecks.forEach(check => {
@@ -271,7 +279,6 @@
                 });
             };
 
-            // Logica bife individuale
             taskChecks.forEach(check => {
                 check.onclick = () => {
                     toggleRowStyle(check);
@@ -284,4 +291,3 @@
         }
 
         function toggleRowStyle(checkbox) {
-            const row = checkbox.closest('.grid-row');
