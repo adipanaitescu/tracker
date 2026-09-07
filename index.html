@@ -33,7 +33,6 @@
             font-weight: 700;
         }
 
-        /* Butoane ascunse (comentate vizual) conform cerinței */
         .controls {
             display: none; 
         }
@@ -48,7 +47,6 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* Structură fixă pe 3 coloane CSS Grid */
         .grid-header, .grid-row {
             display: grid;
             grid-template-columns: 115px 1fr 65px;
@@ -98,7 +96,6 @@
             accent-color: #3b82f6;
         }
 
-        /* Schema de culori aplicată pe text și marginea stângă */
         .cat-health { border-left: 4px solid var(--color-health); }
         .cat-health .col-time, .cat-health .col-task { color: var(--color-health); }
 
@@ -108,7 +105,6 @@
         .cat-personal { border-left: 4px solid var(--color-personal); }
         .cat-personal .col-time, .cat-personal .col-task { color: var(--color-personal); }
 
-        /* Efect de rând tăiat și redus ca opacitate (Gray-out) la bifare */
         .grid-row.done {
             background-color: #fafafa;
             opacity: 0.4;
@@ -118,7 +114,6 @@
             color: var(--text-muted) !important;
         }
 
-        /* Legendă */
         .legend {
             display: flex;
             gap: 15px;
@@ -150,7 +145,6 @@
 
     <h1>Program Zilnic</h1>
 
-    <!-- Butoane de control reținute silențios în cod -->
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
         <button id="btn-push-auth">Notificări: Solicită</button>
@@ -166,7 +160,7 @@
         </div>
         
         <div id="tasks-body">
-            <div class="loading">Se încarcă cele 14 task-uri din Google Sheets...</div>
+            <div class="loading">Se conectează la sursa de date...</div>
         </div>
     </div>
 
@@ -179,6 +173,23 @@
     <script>
         const csvUrl = 'https://google.com';
         
+        const backupTasks = [
+            { categorie: "health", interval: "06:00 - 06.30", task: "Trezirea", oraAlerta: "06:00" },
+            { categorie: "health", interval: "06.30 - 07:30", task: "Mers pe jos 1h", oraAlerta: "06:30" },
+            { categorie: "personal", interval: "07:30 - 08.00", task: "Pregatirea pentru munca (dush)", oraAlerta: "07:30" },
+            { categorie: "work", interval: "08:00 - 16.00", task: "Munca", oraAlerta: "08:00" },
+            { categorie: "personal", interval: "16.00 - 17.00", task: "Pregatirea mesei / Mancat", oraAlerta: "16:00" },
+            { categorie: "health", interval: "17.00 - 17.15", task: "Exercitii glezne (seria 1)", oraAlerta: "17:00" },
+            { categorie: "health", interval: "17.15 - 17.30", task: "Exercitii glezne (seria 2)", oraAlerta: "17:15" },
+            { categorie: "health", interval: "17.30 - 17.45", task: "Exercitii glezne (seria 3)", oraAlerta: "17:30" },
+            { categorie: "health", interval: "17.45 - 18.00", task: "Exercitii calisthenics", oraAlerta: "17:45" },
+            { categorie: "health", interval: "18.00 - 18.15", task: "Exercitii musculatura (tractiuni)", oraAlerta: "18:00" },
+            { categorie: "health", interval: "18.15 - 18.30", task: "Exercitii Kegel", oraAlerta: "18:15" },
+            { categorie: "personal", interval: "18.30 - 20.00", task: "Vlad", oraAlerta: "18:30" },
+            { categorie: "personal", interval: "20.00 - 21.00", task: "Pregatirea mesei / Mancat", oraAlerta: "20:00" },
+            { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
+        ];
+
         const masterCheck = document.getElementById('master-check');
         const tasksBody = document.getElementById('tasks-body');
         const notifiedHours = new Set();
@@ -186,13 +197,14 @@
         function normalizeTime(timeStr) {
             if (!timeStr) return "";
             let clean = timeStr.trim();
-            if (clean.includes(':') && clean.split(':')[0].length === 1) {
-                clean = '0' + clean;
+            if (clean.includes(':') && clean.split(':').length === 2) {
+                if (clean.split(':')[0].length === 1) {
+                    clean = '0' + clean;
+                }
             }
             return clean;
         }
 
-        // PARSER CSV SECURIZEAT: Separă coloanele corect ținând cont de ghilimele și caracterele din Google Sheets
         function parseGoogleCSV(text) {
             const lines = [];
             let row = [""];
@@ -203,7 +215,7 @@
                 let next = text[i+1];
 
                 if (c === '"') {
-                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } // Ghilimele dublate
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
                     else { inQuotes = !inQuotes; }
                 } else if (c === ',' && !inQuotes) {
                     row.push('');
@@ -217,9 +229,8 @@
             }
             if (row.length > 1 || row[0] !== '') { lines.push(row); }
 
-            // Conversie în array de obiecte mapate pe tabelul tău
             const finalResult = [];
-            for (let j = 1; j < lines.length; j++) { // Sărim header-ul
+            for (let j = 1; j < lines.length; j++) {
                 const cols = lines[j];
                 if (cols.length >= 4 && cols[0].trim() !== "") {
                     finalResult.push({
@@ -233,61 +244,34 @@
             return finalResult;
         }
 
-        // Încărcare SSOT din Google Sheets
+        function renderRows(tasksArray) {
+            tasksBody.innerHTML = ''; 
+            tasksArray.forEach(task => {
+                const row = document.createElement('div');
+                row.className = `grid-row cat-${task.categorie}`;
+                row.setAttribute('data-start', task.oraAlerta);
+                
+                row.innerHTML = `
+                    <div class="col-time">${task.interval}</div>
+                    <div class="col-task">${task.task}</div>
+                    <div class="col-check"><input type="checkbox" class="task-check"></div>
+                `;
+                tasksBody.appendChild(row);
+            });
+            initCheckboxesLogic();
+        }
+
         async function loadSheetData() {
+            if (window.location.protocol === 'file:') {
+                console.log("Rulare locală desktop. Se folosește matricea de rezervă.");
+                renderRows(backupTasks);
+                return;
+            }
+
             try {
                 const response = await fetch(csvUrl);
                 const csvText = await response.text();
                 const tasks = parseGoogleCSV(csvText);
                 
-                tasksBody.innerHTML = ''; 
-                
-                tasks.forEach(task => {
-                    const row = document.createElement('div');
-                    row.className = `grid-row cat-${task.categorie}`;
-                    row.setAttribute('data-start', task.oraAlerta);
-                    
-                    row.innerHTML = `
-                        <div class="col-time">${task.interval}</div>
-                        <div class="col-task">${task.task}</div>
-                        <div class="col-check"><input type="checkbox" class="task-check"></div>
-                    `;
-                    
-                    tasksBody.appendChild(row);
-                });
-
-                initCheckboxesLogic();
-                
-            } catch (error) {
-                tasksBody.innerHTML = `<div class="loading" style="color: #ef4444;">Eroare de conexiune sau parsare la sincronizarea cu Google Sheets.</div>`;
-                console.error(error);
-            }
-        }
-
-        // Logică master-check (Check All) și individual-check (Mark as Done / Tăiere text)
-        function initCheckboxesLogic() {
-            const taskChecks = document.querySelectorAll('.task-check');
-            
-            masterCheck.checked = false;
-            masterCheck.indeterminate = false;
-
-            masterCheck.onclick = () => {
-                const isChecked = masterCheck.checked;
-                taskChecks.forEach(check => {
-                    check.checked = isChecked;
-                    toggleRowStyle(check);
-                });
-            };
-
-            taskChecks.forEach(check => {
-                check.onclick = () => {
-                    toggleRowStyle(check);
-                    const allChecked = Array.from(taskChecks).every(c => c.checked);
-                    const noneChecked = Array.from(taskChecks).every(c => !c.checked);
-                    masterCheck.checked = allChecked;
-                    masterCheck.indeterminate = !allChecked && !noneChecked;
-                };
-            });
-        }
-
-        function toggleRowStyle(checkbox) {
+                if (tasks.length > 0) {
+                    renderRows(tasks);
