@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Routine Tracker v2026</title>
+    <title>Daily Routine Tracker</title>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -187,7 +187,7 @@
         <div class="chart-container" id="healthChart"></div>
     </div>
 
-    <div class="source-badge" id="sourceBadge">Stare: Aplicație Activă</div>
+    <div class="source-badge" id="sourceBadge">Stare: Mod Securizat Activ</div>
 
 <script>
     const GOOGLE_SHEET_CSV_URL = "https://google.com";
@@ -214,14 +214,13 @@
     const categoriesContainer = document.getElementById('categoriesContainer');
     const sourceBadge = document.getElementById('sourceBadge');
 
-    // Generare dată curentă compatibilă cross-browser
+    // Generare dată curentă standard (Format: YYYY-MM-DD)
     const dObj = new Date();
     const currentDayStr = dObj.getFullYear() + "-" + String(dObj.getMonth() + 1).padStart(2, '0') + "-" + String(dObj.getDate()).padStart(2, '0');
     datePicker.value = currentDayStr;
 
-    // Cache Busting pe cheia de memorie (v16) pentru a forța reîmprospătarea
-    function getStoredData() { return JSON.parse(localStorage.getItem('routine_v16')) || {}; }
-    function setStoredData(obj) { localStorage.setItem('routine_v16', JSON.stringify(obj)); }
+    function getStoredData() { return JSON.parse(localStorage.getItem('routine_v17')) || {}; }
+    function setStoredData(obj) { localStorage.setItem('routine_v17', JSON.stringify(obj)); }
 
     function drawInterface() {
         const selectedDay = datePicker.value || currentDayStr;
@@ -232,7 +231,7 @@
         const groups = { health: [], work: [], personal: [] };
         
         dataset.forEach(item => {
-            if(groups[item.category]) groups[item.category].push(item);
+            if(item && groups[item.category]) groups[item.category].push(item);
         });
 
         ["health", "work", "personal"].forEach(key => {
@@ -247,3 +246,5 @@
             list.forEach(task => {
                 const checked = activeDayState[task.id] || false;
                 let status = "Not started";
+                if (checked) {
+                    status = "Done";
