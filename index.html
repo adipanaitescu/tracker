@@ -6,182 +6,268 @@
     <title>Program Zilnic</title>
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --cat-health: #F08209;    /* Portocaliu 75% */
-            --cat-personal: #3b82f6;  /* Albastru Regal */
-            --cat-work: #8b5cf6;      /* Violet Intens */
+            --color-sport: #F08209;
+            --color-work: #8B5CF6;
+            --color-personal: #3B82F6;
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
             margin: 0;
-            padding: 15px;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        h1 { font-size: 1.4rem; margin-bottom: 20px; font-weight: 700; color: #1e293b; }
-
-        .task-container {
-            width: 100%;
-            max-width: 500px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            overflow: hidden;
-            border: 1px solid var(--border);
-            margin-bottom: 25px;
+        h1 {
+            font-size: 1.5rem;
+            margin: 10px 0 20px 0;
+            text-align: center;
         }
 
-        .grid-layout {
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #252525;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .table-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .grid-header, .grid-row {
             display: grid;
-            grid-template-columns: 130px 1fr 90px;
+            grid-template-columns: 105px 1fr 60px; /* Lățit prima coloană pentru a cuprinde complet intervalul orar */
+            align-items: center;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        .grid-header {
+            background-color: #252525;
+            font-weight: bold;
+            font-size: 0.9rem;
+            padding: 12px 0;
+            text-align: center;
+        }
+
+        .grid-row {
+            padding: 14px 0;
+            transition: background-color 0.2s;
+        }
+
+        .col-time {
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .col-task {
+            padding: 0 10px;
+            font-size: 0.95rem;
+            line-height: 1.3;
+            font-weight: 500;
+        }
+
+        .col-check {
+            display: flex;
+            justify-content: center;
             align-items: center;
         }
 
-        .table-header {
-            background-color: #f1f5f9;
-            border-bottom: 2px solid var(--border);
-            padding: 12px 0;
+        input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
         }
 
-        .header-col { font-weight: 700; font-size: 0.95rem; text-align: center; }
-        .col-check { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1.1; }
-        .check-all-label { font-size: 0.75rem; white-space: nowrap; }
+        /* Schița de culori corelată precis cu imaginea trimisă */
+        .cat-sport { border-left: 4px solid var(--color-sport); color: var(--color-sport); }
+        .cat-work { border-left: 4px solid var(--color-work); color: var(--color-work); }
+        .cat-personal { border-left: 4px solid var(--color-personal); color: var(--color-personal); }
 
-        .task-row { padding: 14px 0; border-bottom: 1px solid var(--border); position: relative; }
-        .task-row:last-child { border-bottom: none; }
-
-        .time-box, .task-name { text-align: center; font-weight: 600; font-size: 0.95rem; }
-        .time-box { font-size: 0.85rem; font-weight: 700; }
-        .check-box-wrapper { display: flex; justify-content: center; }
-
-        .task-row.type-health .time-box, .task-row.type-health .task-name { color: var(--cat-health); }
-        .task-row.type-work .time-box, .task-row.type-work .task-name { color: var(--cat-work); }
-        .task-row.type-personal .time-box, .task-row.type-personal .task-name { color: var(--cat-personal); }
-
-        .task-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
-        .task-row.type-health::before { background-color: var(--cat-health); }
-        .task-row.type-work::before { background-color: var(--cat-work); }
-        .task-row.type-personal::before { background-color: var(--cat-personal); }
-
-        .task-row.done { background-color: #f8fafc; opacity: 0.5; }
-        .task-row.done .time-box, .task-row.done .task-name { text-decoration: line-through !important; color: var(--text-muted) !important; }
-
-        input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
-        .task-row.type-health input[type="checkbox"] { accent-color: var(--cat-health); }
-        .task-row.type-work input[type="checkbox"] { accent-color: var(--cat-work); }
-        .task-row.type-personal input[type="checkbox"] { accent-color: var(--cat-personal); }
-        #checkAll { accent-color: #475569; }
-
-        .legend-card { width: 100%; max-width: 468px; background: var(--card-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border); }
-        .legend-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
-        .legend-items { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .dot-health { background-color: var(--cat-health); }
-        .dot-work { background-color: var(--cat-work); }
-        .dot-personal { background-color: var(--cat-personal); }
+        .done .col-task, .done .col-time {
+            text-decoration: line-through;
+            color: var(--text-muted) !important;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
 
     <h1>Program Zilnic</h1>
 
-    <div class="task-container">
-        <div class="table-header grid-layout">
-            <div class="header-col">Ora</div>
-            <div class="header-col">Task</div>
-            <div class="header-col col-check">
-                <span class="check-all-label">Check All</span>
-                <input type="checkbox" id="checkAll">
+    <div class="controls">
+        <button id="btn-audio-auth">Sunet: Dezactivat</button>
+        <button id="btn-push-auth">Notificări: Solicită</button>
+    </div>
+
+    <div class="table-container">
+        <div class="grid-header">
+            <div>Ora</div>
+            <div>Task</div>
+            <div class="col-check">
+                <input type="checkbox" id="master-check" title="Check All">
             </div>
         </div>
-        <div id="dynamicTasksContainer"></div>
-    </div>
 
-    <div class="legend-card">
-        <div class="legend-title">📋 Legendă Categorii</div>
-        <div class="legend-items">
-            <div class="legend-item"><span class="dot dot-health"></span> <span style="color: var(--cat-health)">Sănătate & Sport</span></div>
-            <div class="legend-item"><span class="dot dot-work"></span> <span style="color: var(--cat-work)">Muncă / Carieră</span></div>
-            <div class="legend-item"><span class="dot dot-personal"></span> <span style="color: var(--cat-personal)">Stil de viață / Personal</span></div>
+        <!-- Sursa unică de adevăr (data-start): Motorul verifică doar dacă ora curentă a depășit sau a atins începutul intervalului -->
+        <div class="grid-row cat-sport" data-start="06:00">
+            <div class="col-time">06:00 - 06:30</div>
+            <div class="col-task">Trezirea</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="06:30">
+            <div class="col-time">06:30 - 07:30</div>
+            <div class="col-task">Mers pe jos 1h</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-personal" data-start="07:30">
+            <div class="col-time">07:30 - 08:00</div>
+            <div class="col-task">Pregatirea pentru munca (dush)</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-work" data-start="08:00">
+            <div class="col-time">08:00 - 16:00</div>
+            <div class="col-task">Munca</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-personal" data-start="16:00">
+            <div class="col-time">16:00 - 17:00</div>
+            <div class="col-task">Pregatirea mesei / Mancat</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="17:00">
+            <div class="col-time">17:00 - 17:15</div>
+            <div class="col-task">Exercitii glezne (seria 1)</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="17:15">
+            <div class="col-time">17:15 - 17:30</div>
+            <div class="col-task">Exercitii glezne (seria 2)</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="17:30">
+            <div class="col-time">17:30 - 17:45</div>
+            <div class="col-task">Exercitii glezne (seria 3)</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="17:45">
+            <div class="col-time">17:45 - 18:00</div>
+            <div class="col-task">Exercitii calisthenics</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="18:00">
+            <div class="col-time">18:00 - 18:15</div>
+            <div class="col-task">Exercitii musculatura (tractiuni)</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-sport" data-start="18:15">
+            <div class="col-time">18:15 - 18:30</div>
+            <div class="col-task">Exercitii Kegel</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
+        </div>
+        <div class="grid-row cat-personal" data-start="18:30">
+            <div class="col-time">18:30 - 20:00</div>
+            <div class="col-task">Vlad</div>
+            <div class="col-check"><input type="checkbox" class="task-check"></div>
         </div>
     </div>
 
-<script>
-    // Single Source of Truth: Datele brute care definesc complet aplicația
-    const database = [
-        { id: "task_1", category: "health", interval: "06:00 - 06:30", name: "Trezirea" },
-        { id: "task_2", category: "health", interval: "06:30 - 07:30", name: "Mers pe jos 1h" },
-        { id: "task_3", category: "personal", interval: "07:30 - 08:00", name: "Pregatirea pentru munca (dush)" },
-        { id: "task_4", category: "work", interval: "08:00 - 16:00", name: "Munca" },
-        { id: "task_5", category: "personal", interval: "16:00 - 17:00", name: "Pregatirea mesei / Mancat" },
-        { id: "task_6", category: "health", interval: "17:00 - 17:15", name: "Exercitii glezne (seria 1)" },
-        { id: "task_7", category: "health", interval: "17:15 - 17:30", name: "Exercitii glezne (seria 2)" },
-        { id: "task_8", category: "health", interval: "17:30 - 17:45", name: "Exercitii glezne (seria 3)" },
-        { id: "task_9", category: "health", interval: "17:45 - 18:00", name: "Exercitii calisthenics" },
-        { id: "task_10", category: "health", interval: "18:00 - 18:15", name: "Exercitii musculatura (tractiuni)" },
-        { id: "task_11", category: "health", interval: "18:15 - 18:30", name: "Exercitii Kegel" },
-        { id: "task_12", category: "personal", interval: "18:30 - 20:00", name: "Vlad" },
-        { id: "task_13", category: "personal", interval: "20:00 - 21:00", name: "Pregatirea mesei / Mancat" },
-        { id: "task_14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
-    ];
+    <script>
+        // --- MASTER CHECK & MANAGEMENT GRILĂ ---
+        const masterCheck = document.getElementById('master-check');
+        const taskChecks = document.querySelectorAll('.task-check');
 
-    // Garanție anti-cache: Namespace dedicat curat
-    const STORAGE_KEY = "pwa_production_routine_v1";
-    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-
-    function render() {
-        const target = document.getElementById('dynamicTasksContainer');
-        let htmlBuffer = '';
-        let allChecked = true;
-
-        database.forEach(task => {
-            const isDone = state[task.id] || false;
-            if (!isDone) allChecked = false;
-
-            htmlBuffer += `
-                <div class="task-row grid-layout type-${task.category} ${isDone ? 'done' : ''}">
-                    <div class="time-box">${task.interval}</div>
-                    <div class="task-name">${task.name}</div>
-                    <div class="check-box-wrapper">
-                        <input type="checkbox" class="task-check" data-id="${task.id}" ${isDone ? 'checked' : ''}>
-                    </div>
-                </div>`;
-        });
-
-        target.innerHTML = htmlBuffer;
-        document.getElementById('checkAll').checked = database.length > 0 ? allChecked : false;
-
-        // Delegare evenimente bife individuale
-        document.querySelectorAll('.task-check').forEach(box => {
-            box.addEventListener('change', (e) => {
-                const id = e.target.getAttribute('data-id');
-                state[id] = e.target.checked;
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                render();
+        masterCheck.addEventListener('change', () => {
+            const isChecked = masterCheck.checked;
+            taskChecks.forEach(check => {
+                check.checked = isChecked;
+                toggleRowStyle(check);
             });
         });
-    }
 
-    // Gestionare bifa master (Check All / Uncheck All)
-    document.getElementById('checkAll').addEventListener('change', (e) => {
-        const targetState = e.target.checked;
-        database.forEach(task => { state[task.id] = targetState; });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        render();
-    });
+        taskChecks.forEach(check => {
+            check.addEventListener('change', () => {
+                toggleRowStyle(check);
+                const allChecked = Array.from(taskChecks).every(c => c.checked);
+                const noneChecked = Array.from(taskChecks).every(c => !c.checked);
+                masterCheck.checked = allChecked;
+                masterCheck.indeterminate = !allChecked && !noneChecked;
+            });
+        });
 
-    // Inițializare aplicație
-    render();
-</script>
-</body>
-</html>
+        function toggleRowStyle(checkbox) {
+            const row = checkbox.closest('.grid-row');
+            if (checkbox.checked) {
+                row.classList.add('done');
+            } else {
+                row.classList.remove('done');
+            }
+        }
+
+        // --- DEZVOLTARE AUDIO (Sintetizator Web) ---
+        let audioContext = null;
+        const btnAudioAuth = document.getElementById('btn-audio-auth');
+
+        btnAudioAuth.addEventListener('click', () => {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            btnAudioAuth.textContent = "Sunet: Activ";
+            btnAudioAuth.style.backgroundColor = "#15803d";
+            playChime();
+        });
+
+        function playChime() {
+            if (!audioContext) return;
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, now);
+            osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.15);
+            
+            gainNode.gain.setValueAtTime(0.4, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.6);
+        }
+
+        // --- MANAGEMENT NOTIFICĂRI ---
+        const btnPushAuth = document.getElementById('btn-push-auth');
+
+        btnPushAuth.addEventListener('click', () => {
+            if (!('Notification' in window)) {
+                alert('Acest browser nu suportă notificări native.');
+                return;
