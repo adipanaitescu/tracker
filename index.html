@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v01</title>
+    <title>Program Zilnic v02</title>
     <style>
         :root {
             --color-health: #F08209;
@@ -143,8 +143,7 @@
 </head>
 <body>
 
-    <!-- Versiunea adăugată în titlu conform cerinței -->
-    <h1>Program Zilnic v01</h1>
+    <h1>Program Zilnic v02</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -161,7 +160,7 @@
         </div>
         
         <div id="tasks-body">
-            <div class="loading">Se conectează la sursa de date...</div>
+            <div class="loading">Se încarcă datele...</div>
         </div>
     </div>
 
@@ -199,14 +198,14 @@
             let clean = timeStr.trim();
             if (clean.includes(':')) {
                 const parts = clean.split(':');
-                if (parts[0].length === 1) {
+                if (parts[0] && parts[0].length === 1) {
                     clean = '0' + clean;
                 }
             }
             return clean;
         }
 
-        // Parser curat fără apeluri invalide de tip .trim() pe array-uri
+        // Parser ultra-protejat împotriva erorilor de citire date goale
         function parseGoogleCSV(text) {
             const lines = [];
             let row = [""];
@@ -229,12 +228,13 @@
                     row[row.length - 1] += c;
                 }
             }
-            if (row.length > 1 || row[0] !== '') { lines.push(row); }
+            if (row.length > 1 || row !== '') { lines.push(row); }
 
             const finalResult = [];
             for (let j = 1; j < lines.length; j++) {
                 const cols = lines[j];
-                if (cols.length >= 4) {
+                // Ne asigurăm că rândul are date valide înainte de a le procesa
+                if (cols && cols.length >= 4) {
                     const cat = cols[0] ? cols[0].trim().toLowerCase() : "";
                     const interval = cols[1] ? cols[1].trim() : "";
                     const taskText = cols[2] ? cols[2].trim() : "";
@@ -257,12 +257,12 @@
             tasksBody.innerHTML = ''; 
             tasksArray.forEach(task => {
                 const row = document.createElement('div');
-                row.className = `grid-row cat-${task.categorie}`;
-                row.setAttribute('data-start', task.oraAlerta);
+                row.className = `grid-row cat-${task.categorie || 'personal'}`;
+                row.setAttribute('data-start', task.oraAlerta || '');
                 
                 row.innerHTML = `
-                    <div class="col-time">${task.interval}</div>
-                    <div class="col-task">${task.task}</div>
+                    <div class="col-time">${task.interval || ''}</div>
+                    <div class="col-task">${task.task || ''}</div>
                     <div class="col-check"><input type="checkbox" class="task-check"></div>
                 `;
                 tasksBody.appendChild(row);
@@ -271,4 +271,3 @@
         }
 
         async function loadSheetData() {
-            if (window.location.protocol === 'file:') {
