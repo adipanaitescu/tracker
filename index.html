@@ -11,8 +11,6 @@
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
-            
-            /* Schema de culori stabilită */
             --cat-health: #F08209;    /* Portocaliu 75% */
             --cat-personal: #3b82f6;  /* Albastru Regal */
             --cat-work: #8b5cf6;      /* Violet Intens */
@@ -29,12 +27,7 @@
             align-items: center;
         }
 
-        h1 {
-            font-size: 1.4rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-            color: #1e293b;
-        }
+        h1 { font-size: 1.4rem; margin-bottom: 20px; font-weight: 700; color: #1e293b; }
 
         .task-container {
             width: 100%;
@@ -47,155 +40,52 @@
             margin-bottom: 25px;
         }
 
-        /* Structură CSS Grid aliniată fix pe 3 coloane */
         .grid-layout {
             display: grid;
             grid-template-columns: 130px 1fr 90px;
             align-items: center;
         }
 
-        /* Capul de Tabel */
         .table-header {
             background-color: #f1f5f9;
             border-bottom: 2px solid var(--border);
             padding: 12px 0;
         }
 
-        .header-col {
-            font-weight: 700;
-            font-size: 0.95rem;
-            text-align: center;
-        }
+        .header-col { font-weight: 700; font-size: 0.95rem; text-align: center; }
+        .col-check { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1.1; }
+        .check-all-label { font-size: 0.75rem; white-space: nowrap; }
 
-        .header-col.col-check {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            line-height: 1.1;
-        }
+        .task-row { padding: 14px 0; border-bottom: 1px solid var(--border); position: relative; }
+        .task-row:last-child { border-bottom: none; }
 
-        .check-all-label {
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
+        .time-box, .task-name { text-align: center; font-weight: 600; font-size: 0.95rem; }
+        .time-box { font-size: 0.85rem; font-weight: 700; }
+        .check-box-wrapper { display: flex; justify-content: center; }
 
-        /* Rândurile de task-uri */
-        .task-row {
-            padding: 14px 0;
-            border-bottom: 1px solid var(--border);
-            position: relative;
-        }
+        .task-row.type-health .time-box, .task-row.type-health .task-name { color: var(--cat-health); }
+        .task-row.type-work .time-box, .task-row.type-work .task-name { color: var(--cat-work); }
+        .task-row.type-personal .time-box, .task-row.type-personal .task-name { color: var(--cat-personal); }
 
-        .task-row:last-child {
-            border-bottom: none;
-        }
-
-        .time-box {
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-align: center;
-        }
-
-        .task-name {
-            font-size: 0.95rem;
-            font-weight: 600;
-            padding: 0 10px;
-            text-align: center;
-        }
-
-        .check-box-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Culori text pe categorii */
-        .task-row.type-health .time-box,
-        .task-row.type-health .task-name { color: var(--cat-health); }
-        .task-row.type-work .time-box,
-        .task-row.type-work .task-name { color: var(--cat-work); }
-        .task-row.type-personal .time-box,
-        .task-row.type-personal .task-name { color: var(--cat-personal); }
-
-        /* Indicator lateral stânga */
-        .task-row::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-        }
+        .task-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
         .task-row.type-health::before { background-color: var(--cat-health); }
         .task-row.type-work::before { background-color: var(--cat-work); }
         .task-row.type-personal::before { background-color: var(--cat-personal); }
 
-        /* Efect tăiere text când e bifat */
-        .task-row.done {
-            background-color: #f8fafc;
-            opacity: 0.5;
-        }
+        .task-row.done { background-color: #f8fafc; opacity: 0.5; }
+        .task-row.done .time-box, .task-row.done .task-name { text-decoration: line-through !important; color: var(--text-muted) !important; }
 
-        .task-row.done .time-box,
-        .task-row.done .task-name {
-            text-decoration: line-through !important;
-            color: var(--text-muted) !important;
-        }
-
-        input[type="checkbox"] {
-            width: 22px;
-            height: 22px;
-            cursor: pointer;
-        }
-        
+        input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
         .task-row.type-health input[type="checkbox"] { accent-color: var(--cat-health); }
         .task-row.type-work input[type="checkbox"] { accent-color: var(--cat-work); }
         .task-row.type-personal input[type="checkbox"] { accent-color: var(--cat-personal); }
         #checkAll { accent-color: #475569; }
 
-        /* Legendă */
-        .legend-card {
-            width: 100%;
-            max-width: 468px;
-            background: var(--card-bg);
-            padding: 14px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-        }
-
-        .legend-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-        }
-
-        .legend-items {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
+        .legend-card { width: 100%; max-width: 468px; background: var(--card-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border); }
+        .legend-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+        .legend-items { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
         .dot-health { background-color: var(--cat-health); }
         .dot-work { background-color: var(--cat-work); }
         .dot-personal { background-color: var(--cat-personal); }
@@ -206,7 +96,6 @@
     <h1>Program Zilnic</h1>
 
     <div class="task-container">
-        <!-- Cap de Tabel -->
         <div class="table-header grid-layout">
             <div class="header-col">Ora</div>
             <div class="header-col">Task</div>
@@ -215,63 +104,84 @@
                 <input type="checkbox" id="checkAll">
             </div>
         </div>
-        
-        <!-- Toate cele 14 rânduri corect indexate de la task_1 la task_14 -->
-        <div class="task-row grid-layout type-health" id="row_task_1">
-            <div class="time-box">06:00 - 06:30</div>
-            <div class="task-name">Trezirea</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_1"></div>
+        <div id="dynamicTasksContainer"></div>
+    </div>
+
+    <div class="legend-card">
+        <div class="legend-title">📋 Legendă Categorii</div>
+        <div class="legend-items">
+            <div class="legend-item"><span class="dot dot-health"></span> <span style="color: var(--cat-health)">Sănătate & Sport</span></div>
+            <div class="legend-item"><span class="dot dot-work"></span> <span style="color: var(--cat-work)">Muncă / Carieră</span></div>
+            <div class="legend-item"><span class="dot dot-personal"></span> <span style="color: var(--cat-personal)">Stil de viață / Personal</span></div>
         </div>
-        <div class="task-row grid-layout type-health" id="row_task_2">
-            <div class="time-box">06:30 - 07:30</div>
-            <div class="task-name">Mers pe jos 1h</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_2"></div>
-        </div>
-        <div class="task-row grid-layout type-personal" id="row_task_3">
-            <div class="time-box">07:30 - 08:00</div>
-            <div class="task-name">Pregatirea pentru munca (dush)</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_3"></div>
-        </div>
-        <div class="task-row grid-layout type-work" id="row_task_4">
-            <div class="time-box">08:00 - 16:00</div>
-            <div class="task-name">Munca</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_4"></div>
-        </div>
-        <div class="task-row grid-layout type-personal" id="row_task_5">
-            <div class="time-box">16:00 - 17:00</div>
-            <div class="task-name">Pregatirea mesei / Mancat</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_5"></div>
-        </div>
-        <div class="task-row grid-layout type-health" id="row_task_6">
-            <div class="time-box">17:00 - 17:15</div>
-            <div class="task-name">Exercitii glezne (seria 1)</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_6"></div>
-        </div>
-        <div class="task-row grid-layout type-health" id="row_task_7">
-            <div class="time-box">17:15 - 17:30</div>
-            <div class="task-name">Exercitii glezne (seria 2)</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_7"></div>
-        </div>
-        <div class="task-row grid-layout type-health" id="row_task_8">
-            <div class="time-box">17:30 - 17:45</div>
-            <div class="task-name">Exercitii glezne (seria 3)</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_8"></div>
-        </div>
-        <div class="task-row grid-layout type-health" id="row_task_9">
-            <div class="time-box">17:45 - 18:00</div>
-            <div class="task-name">Exercitii calisthenics</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_9"></div>
-        </div>
-        <div class="task-row grid-layout type-health" id="row_task_10">
-            <div class="time-box">18:00 - 18:15</div>
-            <div class="task-name">Exercitii musculatura (tractiuni)</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_10"></div>
-        </div>
-        <div class="task-row grid-layout type-health" id="row_task_11">
-            <div class="time-box">18:15 - 18:30</div>
-            <div class="task-name">Exercitii Kegel</div>
-            <div class="check-box-wrapper"><input type="checkbox" class="task-check" data-id="task_11"></div>
-        </div>
-        <div class="task-row grid-layout type-personal" id="row_task_12">
-            <div class="time-box">18:30 - 20:00</div>
-            <div class="task-name">Vlad</div>
+    </div>
+
+<script>
+    // Single Source of Truth: Datele brute care definesc complet aplicația
+    const database = [
+        { id: "task_1", category: "health", interval: "06:00 - 06:30", name: "Trezirea" },
+        { id: "task_2", category: "health", interval: "06:30 - 07:30", name: "Mers pe jos 1h" },
+        { id: "task_3", category: "personal", interval: "07:30 - 08:00", name: "Pregatirea pentru munca (dush)" },
+        { id: "task_4", category: "work", interval: "08:00 - 16:00", name: "Munca" },
+        { id: "task_5", category: "personal", interval: "16:00 - 17:00", name: "Pregatirea mesei / Mancat" },
+        { id: "task_6", category: "health", interval: "17:00 - 17:15", name: "Exercitii glezne (seria 1)" },
+        { id: "task_7", category: "health", interval: "17:15 - 17:30", name: "Exercitii glezne (seria 2)" },
+        { id: "task_8", category: "health", interval: "17:30 - 17:45", name: "Exercitii glezne (seria 3)" },
+        { id: "task_9", category: "health", interval: "17:45 - 18:00", name: "Exercitii calisthenics" },
+        { id: "task_10", category: "health", interval: "18:00 - 18:15", name: "Exercitii musculatura (tractiuni)" },
+        { id: "task_11", category: "health", interval: "18:15 - 18:30", name: "Exercitii Kegel" },
+        { id: "task_12", category: "personal", interval: "18:30 - 20:00", name: "Vlad" },
+        { id: "task_13", category: "personal", interval: "20:00 - 21:00", name: "Pregatirea mesei / Mancat" },
+        { id: "task_14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
+    ];
+
+    // Garanție anti-cache: Namespace dedicat curat
+    const STORAGE_KEY = "pwa_production_routine_v1";
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+    function render() {
+        const target = document.getElementById('dynamicTasksContainer');
+        let htmlBuffer = '';
+        let allChecked = true;
+
+        database.forEach(task => {
+            const isDone = state[task.id] || false;
+            if (!isDone) allChecked = false;
+
+            htmlBuffer += `
+                <div class="task-row grid-layout type-${task.category} ${isDone ? 'done' : ''}">
+                    <div class="time-box">${task.interval}</div>
+                    <div class="task-name">${task.name}</div>
+                    <div class="check-box-wrapper">
+                        <input type="checkbox" class="task-check" data-id="${task.id}" ${isDone ? 'checked' : ''}>
+                    </div>
+                </div>`;
+        });
+
+        target.innerHTML = htmlBuffer;
+        document.getElementById('checkAll').checked = database.length > 0 ? allChecked : false;
+
+        // Delegare evenimente bife individuale
+        document.querySelectorAll('.task-check').forEach(box => {
+            box.addEventListener('change', (e) => {
+                const id = e.target.getAttribute('data-id');
+                state[id] = e.target.checked;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                render();
+            });
+        });
+    }
+
+    // Gestionare bifa master (Check All / Uncheck All)
+    document.getElementById('checkAll').addEventListener('change', (e) => {
+        const targetState = e.target.checked;
+        database.forEach(task => { state[task.id] = targetState; });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        render();
+    });
+
+    // Inițializare aplicație
+    render();
+</script>
+</body>
+</html>
