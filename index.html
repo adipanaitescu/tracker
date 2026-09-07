@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v02</title>
+    <title>Program Zilnic v03</title>
+    <!-- Standardul industriei pentru procesare robustă de fluxuri CSV -->
+    <script src="https://cloudflare.com" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         :root {
             --color-health: #F08209;
@@ -143,7 +145,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v02</h1>
+    <h1>Program Zilnic v03</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -198,67 +200,24 @@
             let clean = timeStr.trim();
             if (clean.includes(':')) {
                 const parts = clean.split(':');
-                if (parts[0] && parts[0].length === 1) {
+                if (parts[0].length === 1) {
                     clean = '0' + clean;
                 }
             }
             return clean;
         }
 
-        // Parser ultra-protejat împotriva erorilor de citire date goale
-        function parseGoogleCSV(text) {
-            const lines = [];
-            let row = [""];
-            let inQuotes = false;
-
-            for (let i = 0; i < text.length; i++) {
-                let c = text[i];
-                let next = text[i+1];
-
-                if (c === '"') {
-                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
-                    else { inQuotes = !inQuotes; }
-                } else if (c === ',' && !inQuotes) {
-                    row.push('');
-                } else if ((c === '\r' || c === '\n') && !inQuotes) {
-                    if (c === '\r' && next === '\n') { i++; }
-                    lines.push(row);
-                    row = [''];
-                } else {
-                    row[row.length - 1] += c;
-                }
-            }
-            if (row.length > 1 || row !== '') { lines.push(row); }
-
-            const finalResult = [];
-            for (let j = 1; j < lines.length; j++) {
-                const cols = lines[j];
-                // Ne asigurăm că rândul are date valide înainte de a le procesa
-                if (cols && cols.length >= 4) {
-                    const cat = cols[0] ? cols[0].trim().toLowerCase() : "";
-                    const interval = cols[1] ? cols[1].trim() : "";
-                    const taskText = cols[2] ? cols[2].trim() : "";
-                    const alertTime = cols[3] ? cols[3].trim() : "";
-
-                    if (cat || interval || taskText) {
-                        finalResult.push({
-                            categorie: cat,
-                            interval: interval,
-                            task: taskText,
-                            oraAlerta: normalizeTime(alertTime)
-                        });
-                    }
-                }
-            }
-            return finalResult;
-        }
-
         function renderRows(tasksArray) {
+            if (!Array.isArray(tasksArray) || tasksArray.length === 0) {
+                tasksArray = backupTasks;
+            }
+            
             tasksBody.innerHTML = ''; 
             tasksArray.forEach(task => {
                 const row = document.createElement('div');
-                row.className = `grid-row cat-${task.categorie || 'personal'}`;
-                row.setAttribute('data-start', task.oraAlerta || '');
+                const safeCat = (task.categorie || 'personal').trim().toLowerCase();
+                row.className = `grid-row cat-${safeCat}`;
+                row.setAttribute('data-start', normalizeTime(task.oraAlerta));
                 
                 row.innerHTML = `
                     <div class="col-time">${task.interval || ''}</div>
@@ -271,3 +230,29 @@
         }
 
         async function loadSheetData() {
+            // Evaluare context de execuție: Protocol local file:// -> Execuție deterministică instantă pe Backup
+            if (window.location.protocol === 'file:') {
+                renderRows(backupTasks);
+                return;
+            }
+
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error(`HTTP network error: ${response.status}`);
+                const csvText = await response.text();
+                
+                // Parsare robustă prin motorul industrial PapaParse
+                Papa.parse(csvText, {
+                    header: true, // Folosește primul rând din Google Sheets ca chei de mapare obiecte
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const parsedTasks = [];
+                        if (results && results.data) {
+                            results.data.forEach(row => {
+                                // Mapare dinamică agnostic-case bazată pe poziție / headere standard
+                                const keys = Object.keys(row);
+                                if (keys.length >= 4) {
+                                    parsedTasks.push({
+                                        categorie: row[keys[0]] ? row[keys[0]].toString() : '',
+                                        interval: row[keys[1]] ? row[keys[1]].toString() : '',
+                                        task: row[keys[2]] ? row[keys[2]].toString() : '',
