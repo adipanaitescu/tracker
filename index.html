@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic</title>
+    <title>Program Zilnic v01</title>
     <style>
         :root {
             --color-health: #F08209;
@@ -143,7 +143,8 @@
 </head>
 <body>
 
-    <h1>Program Zilnic</h1>
+    <!-- Versiunea adăugată în titlu conform cerinței -->
+    <h1>Program Zilnic v01</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -192,19 +193,20 @@
 
         const masterCheck = document.getElementById('master-check');
         const tasksBody = document.getElementById('tasks-body');
-        const notifiedHours = new Set();
 
         function normalizeTime(timeStr) {
             if (!timeStr) return "";
             let clean = timeStr.trim();
-            if (clean.includes(':') && clean.split(':').length === 2) {
-                if (clean.split(':')[0].length === 1) {
+            if (clean.includes(':')) {
+                const parts = clean.split(':');
+                if (parts[0].length === 1) {
                     clean = '0' + clean;
                 }
             }
             return clean;
         }
 
+        // Parser curat fără apeluri invalide de tip .trim() pe array-uri
         function parseGoogleCSV(text) {
             const lines = [];
             let row = [""];
@@ -232,13 +234,20 @@
             const finalResult = [];
             for (let j = 1; j < lines.length; j++) {
                 const cols = lines[j];
-                if (cols.length >= 4 && cols[0].trim() !== "") {
-                    finalResult.push({
-                        categorie: cols[0].trim().toLowerCase(),
-                        interval: cols[1].trim(),
-                        task: cols[2].trim(),
-                        oraAlerta: normalizeTime(cols[3])
-                    });
+                if (cols.length >= 4) {
+                    const cat = cols[0] ? cols[0].trim().toLowerCase() : "";
+                    const interval = cols[1] ? cols[1].trim() : "";
+                    const taskText = cols[2] ? cols[2].trim() : "";
+                    const alertTime = cols[3] ? cols[3].trim() : "";
+
+                    if (cat || interval || taskText) {
+                        finalResult.push({
+                            categorie: cat,
+                            interval: interval,
+                            task: taskText,
+                            oraAlerta: normalizeTime(alertTime)
+                        });
+                    }
                 }
             }
             return finalResult;
@@ -263,15 +272,3 @@
 
         async function loadSheetData() {
             if (window.location.protocol === 'file:') {
-                console.log("Rulare locală desktop. Se folosește matricea de rezervă.");
-                renderRows(backupTasks);
-                return;
-            }
-
-            try {
-                const response = await fetch(csvUrl);
-                const csvText = await response.text();
-                const tasks = parseGoogleCSV(csvText);
-                
-                if (tasks.length > 0) {
-                    renderRows(tasks);
