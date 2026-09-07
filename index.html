@@ -12,8 +12,7 @@
             --text-muted: #64748b;
             --border: #e2e8f0;
             
-            /* Schema de culori actualizată */
-            --cat-health: #F08209;    /* Nuanța: Portocaliu 75% */
+            --cat-health: #F08209;    /* Portocaliu 75% */
             --cat-personal: #3b82f6;  /* Albastru Regal */
             --cat-work: #8b5cf6;      /* Violet Intens */
         }
@@ -249,36 +248,37 @@
         { id: "task_14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
     ];
 
-    // Cheia de stocare actualizată pentru a evita conflictele din cache-ul vechi
-    let savedData = JSON.parse(localStorage.getItem('my_chrono_routine_final_v1')) || {
-        bife: {},
-        ultimaData: ""
-    };
-
-    function obtineDataCurenta() {
-        const d = new Date();
-        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
-    }
+    // Citire directă a bifelor fără alte verificări restrictive
+    let bifeSalvate = JSON.parse(localStorage.getItem('my_chrono_clean_bife_v1')) || {};
 
     function renderChronoApp() {
-        const dataAzi = obtineDataCurenta();
-
-        if (savedData.ultimaData !== "" && savedData.ultimaData !== dataAzi) {
-            savedData.bife = {};
-        }
-        
-        savedData.ultimaData = dataAzi;
-        localStorage.setItem('my_chrono_routine_final_v1', JSON.stringify(savedData));
-
         const container = document.getElementById('tasksListContainer');
         container.innerHTML = '';
         let html = '';
 
         tasks.forEach(task => {
-            const isChecked = savedData.bife[task.id] || false;
+            const isChecked = bifeSalvate[task.id] || false;
             const doneClass = isChecked ? ' done' : '';
 
             html += '<div class="task-row grid-layout type-' + task.category + doneClass + '">' +
                 '<div class="time-box">' + task.interval + '</div>' +
                 '<div class="task-name">' + task.name + '</div>' +
                 '<div class="check-box-wrapper">' +
+                    '<input type="checkbox" class="task-check" data-id="' + task.id + '"' + (isChecked ? ' checked' : '') + '>' +
+                '</div>' +
+            '</div>';
+        });
+
+        container.innerHTML = html;
+
+        actualizeazaStatusCheckAll();
+
+        // Listener bife individuale
+        document.querySelectorAll('.task-check').forEach(box => {
+            box.addEventListener('change', function(e) {
+                const tId = e.target.getAttribute('data-id');
+                bifeSalvate[tId] = e.target.checked;
+                localStorage.setItem('my_chrono_clean_bife_v1', JSON.stringify(bifeSalvate));
+                renderChronoApp(); 
+            });
+        });
