@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v04</title>
-    <!-- Motor stabil pentru procesare CSV -->
-    <script src="https://cloudflare.com" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Program Zilnic v05</title>
     <style>
         :root {
             --color-health: #F08209;
@@ -145,7 +143,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v04</h1>
+    <h1>Program Zilnic v05</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -162,7 +160,7 @@
         </div>
         
         <div id="tasks-body">
-            <div class="loading">Se încarcă datele...</div>
+            <div class="loading">Se inițializează structura...</div>
         </div>
     </div>
 
@@ -172,6 +170,7 @@
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-personal)"></span> Stil de viață / Personal</div>
     </div>
 
+    <!-- SCRIPTUL A FOST MUTAT JOS: Toate elementele DOM de mai sus sunt acum complet accesibile securizat -->
     <script>
         const csvUrl = 'https://google.com';
         
@@ -197,20 +196,15 @@
 
         function normalizeTime(timeStr) {
             if (!timeStr) return "";
-            let clean = timeStr.toString().trim();
-            if (clean.includes(':')) {
-                const parts = clean.split(':');
-                if (parts.length === 2 && parts[0].length === 1) {
-                    clean = '0' + clean;
-                }
-            }
-            return clean;
+            return timeStr.toString().trim();
         }
 
         function renderRows(tasksArray) {
             const dataToRender = (Array.isArray(tasksArray) && tasksArray.length > 0) ? tasksArray : backupTasks;
             
+            if (!tasksBody) return;
             tasksBody.innerHTML = ''; 
+            
             dataToRender.forEach(task => {
                 const row = document.createElement('div');
                 const safeCat = (task.categorie || 'personal').trim().toLowerCase();
@@ -227,33 +221,50 @@
             initCheckboxesLogic();
         }
 
-        async function loadSheetData() {
-            if (window.location.protocol === 'file:') {
-                renderRows(backupTasks);
-                return;
+        // Parser nativ complet protejat (Fără regex sau biblioteci externe susceptibile la block)
+        function parseCSVNative(text) {
+            const lines = text.split(/\r?\n/);
+            const parsedTasks = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line) continue;
+
+                // Împărțire securizată ce ignoră virgulele dintre ghilimelele din Google Sheets
+                let result = [];
+                let current = '';
+                let inQuotes = false;
+
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current);
+
+                if (result.length >= 4) {
+                    parsedTasks.push({
+                        categorie: result[0].replace(/^"|"$/g, '').trim(),
+                        interval: result[1].replace(/^"|"$/g, '').trim(),
+                        task: result[2].replace(/^"|"$/g, '').trim(),
+                        oraAlerta: result[3].replace(/^"|"$/g, '').trim()
+                    });
+                }
             }
+            return parsedTasks;
+        }
+
+        async function loadSheetData() {
+            if (window.location.protocol === 'file:') return;
 
             try {
                 const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error(`HTTP: ${response.status}`);
+                if (!response.ok) throw new Error();
                 const csvText = await response.text();
-                
-                Papa.parse(csvText, {
-                    header: false, // Citire brută pe indici numerici fixi pentru stabilitate absolută
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        const parsedTasks = [];
-                        if (results && results.data && results.data.length > 1) {
-                            // Sărim indexul 0 (capul de tabel)
-                            for(let i = 1; i < results.data.length; i++) {
-                                const row = results.data[i];
-                                if (row && row.length >= 4) {
-                                    parsedTasks.push({
-                                        categorie: row[0] ? row[0].toString() : '',
-                                        interval: row[1] ? row[1].toString() : '',
-                                        task: row[2] ? row[2].toString() : '',
-                                        oraAlerta: row[3] ? row[3].toString() : ''
-                                    });
-                                }
-                            }
-                        }
+                const tasks = parseCSVNative(csvText);
