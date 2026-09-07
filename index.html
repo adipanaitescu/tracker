@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tracker Zilnic Personal</title>
+    <title>Tracker Zilnic Cronologic</title>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -34,30 +34,15 @@
             color: #1e293b;
         }
 
-        .category-section {
+        .task-container {
             width: 100%;
             max-width: 500px;
-            margin-bottom: 20px;
-        }
-
-        .category-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .cat-health .category-title { color: var(--cat-health); }
-        .cat-work .category-title { color: var(--cat-work); }
-        .cat-personal .category-title { color: var(--cat-personal); }
-
-        .task-list {
             background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             overflow: hidden;
             border: 1px solid var(--border);
+            margin-bottom: 25px;
         }
 
         .task-row {
@@ -65,33 +50,64 @@
             align-items: center;
             padding: 14px 16px;
             border-bottom: 1px solid var(--border);
+            position: relative;
         }
 
         .task-row:last-child {
             border-bottom: none;
         }
 
-        .task-row.done {
-            background-color: #f8fafc;
-            opacity: 0.65;
+        /* Culori text în funcție de tipul task-ului */
+        .task-row.type-health .task-name,
+        .task-row.type-health .time-box {
+            color: var(--cat-health);
         }
 
-        .task-row.done .task-name {
-            text-decoration: line-through;
-            color: var(--text-muted);
+        .task-row.type-work .task-name,
+        .task-row.type-work .time-box {
+            color: var(--cat-work);
+        }
+
+        .task-row.type-personal .task-name,
+        .task-row.type-personal .time-box {
+            color: var(--cat-personal);
+        }
+
+        /* Indicator lateral subtil pentru categorie */
+        .task-row::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+        .task-row.type-health::before { background-color: var(--cat-health); }
+        .task-row.type-work::before { background-color: var(--cat-work); }
+        .task-row.type-personal::before { background-color: var(--cat-personal); }
+
+        /* Stil când task-ul este bifat (Done) */
+        .task-row.done {
+            background-color: #f8fafc;
+            opacity: 0.5;
+        }
+
+        .task-row.done .task-name,
+        .task-row.done .time-box {
+            text-decoration: line-through !important;
+            color: var(--text-muted) !important;
         }
 
         .time-box {
             font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
+            font-weight: 700;
             min-width: 100px;
         }
 
         .task-name {
             flex-grow: 1;
             font-size: 0.95rem;
-            font-weight: 500;
+            font-weight: 600;
             padding: 0 10px;
         }
 
@@ -100,22 +116,77 @@
             height: 22px;
             cursor: pointer;
         }
+        
+        .task-row.type-health input[type="checkbox"] { accent-color: var(--cat-health); }
+        .task-row.type-work input[type="checkbox"] { accent-color: var(--cat-work); }
+        .task-row.type-personal input[type="checkbox"] { accent-color: var(--cat-personal); }
 
-        .cat-health input[type="checkbox"] { accent-color: var(--cat-health); }
-        .cat-work input[type="checkbox"] { accent-color: var(--cat-work); }
-        .cat-personal input[type="checkbox"] { accent-color: var(--cat-personal); }
+        /* Stil Legendă */
+        .legend-card {
+            width: 100%;
+            max-width: 468px;
+            background: var(--card-bg);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        .legend-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .legend-items {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-health { background-color: var(--cat-health); }
+        .dot-work { background-color: var(--cat-work); }
+        .dot-personal { background-color: var(--cat-personal); }
     </style>
 </head>
 <body>
 
-    <h1>📅 Tracker Zilnic Personal</h1>
+    <h1>📅 Program Zilnic Cronologic</h1>
 
-    <div id="container" style="width: 100%; max-width: 500px;">
-        <!-- Generat automat din script -->
+    <div class="task-container" id="tasksContainer">
+        <!-- Generat automat în ordine cronologică -->
+    </div>
+
+    <!-- Legendă sub tabel -->
+    <div class="legend-card">
+        <div class="legend-title">📋 Legendă Categorii</div>
+        <div class="legend-items">
+            <div class="legend-item"><span class="dot dot-health"></span> <span style="color: var(--cat-health)">Sănătate & Sport</span></div>
+            <div class="legend-item"><span class="dot dot-work"></span> <span style="color: var(--cat-work)">Muncă / Carieră</span></div>
+            <div class="legend-item"><span class="dot dot-personal"></span> <span style="color: var(--cat-personal)">Stil de viață / Personal</span></div>
+        </div>
     </div>
 
 <script>
-    // Cele 14 task-uri fixe extrase din tabelul tau initial
+    // Lista aranjată de la început direct în ordine cronologică pură
     const tasks = [
         { id: "t1", category: "health", interval: "06:00 - 06:30", name: "Trezirea" },
         { id: "t2", category: "health", interval: "06:30 - 07:30", name: "Mers pe jos 1h" },
@@ -133,64 +204,44 @@
         { id: "t14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
     ];
 
-    const labels = { 
-        health: "🟢 Sănătate & Sport", 
-        work: "🔵 Muncă / Carieră", 
-        personal: "🟣 Stil de viață / Personal" 
-    };
+    // Citire bife salvate din memoria locală a browserului
+    let savedState = JSON.parse(localStorage.getItem('my_chrono_routine_v1')) || {};
 
-    // Incarcam starea bifelor din memoria locala a browserului
-    let savedState = JSON.parse(localStorage.getItem('my_routine_states_v1')) || {};
-
-    function renderApp() {
-        const container = document.getElementById('container');
+    function renderChronoApp() {
+        const container = document.getElementById('tasksContainer');
         container.innerHTML = '';
 
-        // Grupam task-urile pe categorii
-        const groups = { health: [], work: [], personal: [] };
-        tasks.forEach(t => groups[t.category].push(t));
+        let html = '';
 
-        // Generam structura HTML pentru fiecare categorie
-        ["health", "work", "personal"].forEach(key => {
-            const list = groups[key];
-            if (list.length === 0) return;
+        // Randăm direct elementele în ordinea din array (care este deja cronologică)
+        tasks.forEach(task => {
+            const isChecked = savedState[task.id] || false;
+            const doneClass = isChecked ? ' done' : '';
 
-            const section = document.createElement('div');
-            section.className = 'category-section cat-' + key;
-            
-            let html = '<div class="category-title">' + labels[key] + '</div><div class="task-list">';
-            
-            list.forEach(task => {
-                const isChecked = savedState[task.id] || false;
-                const doneClass = isChecked ? ' done' : '';
-                
-                html += '<div class="task-row' + doneClass + '">' +
-                    '<div class="time-box">' + task.interval + '</div>' +
-                    '<div class="task-name">' + task.name + '</div>' +
-                    '<div>' +
-                        '<input type="checkbox" class="task-check" data-id="' + task.id + '"' + (isChecked ? ' checked' : '') + '>' +
-                    '</div>' +
-                '</div>';
-            });
-            
-            html += '</div>';
-            section.innerHTML = html;
-            container.appendChild(section);
+            html += '<div class="task-row type-' + task.category + doneClass + '">' +
+                '<div class="time-box">' + task.interval + '</div>' +
+                '<div class="task-name">' + task.name + '</div>' +
+                '<div>' +
+                    '<input type="checkbox" class="task-check" data-id="' + task.id + '"' + (isChecked ? ' checked' : '') + '>' +
+                '</div>' +
+            '</div>';
         });
 
-        // Ascultam cand dai click pe bife si le salvam pe loc
+        container.innerHTML = html;
+
+        // Adăugare eveniment pentru salvarea bifelor la click
         document.querySelectorAll('.task-check').forEach(box => {
             box.addEventListener('change', function(e) {
                 const tId = e.target.getAttribute('data-id');
                 savedState[tId] = e.target.checked;
-                localStorage.setItem('my_routine_states_v1', JSON.stringify(savedState));
-                renderApp(); // Re-randam rapid pentru taierea textului (line-through)
+                localStorage.setItem('my_chrono_routine_v1', JSON.stringify(savedState));
+                renderChronoApp(); // Re-randare instantă pentru aplicarea tăierii textului
             });
         });
     }
 
-    // Pornire instantanee
-    renderApp();
+    // Pornire aplicație
+    renderChronoApp();
 </script>
 </body>
 </html>
