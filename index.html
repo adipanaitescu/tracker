@@ -11,9 +11,11 @@
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
-            --cat-health: #10b981;
-            --cat-work: #3b82f6;
-            --cat-personal: #8b5cf6;
+            
+            /* Noua schemă de culori solicitată */
+            --cat-health: #EA580C;    /* Portocaliu Mandarină */
+            --cat-personal: #3b82f6;  /* Albastru Regal */
+            --cat-work: #8b5cf6;      /* Violet Intens */
         }
 
         body {
@@ -73,7 +75,7 @@
             color: var(--cat-personal);
         }
 
-        /* Indicator lateral subtil pentru categorie */
+        /* Indicator lateral pentru categorie */
         .task-row::before {
             content: '';
             position: absolute;
@@ -169,13 +171,13 @@
 </head>
 <body>
 
-    <h1>📅 Program Zilnic Cronologic</h1>
+    <h1>📅 Program Zilnic</h1>
 
     <div class="task-container" id="tasksContainer">
         <!-- Generat automat în ordine cronologică -->
     </div>
 
-    <!-- Legendă sub tabel -->
+    <!-- Legendă actualizată sub tabel -->
     <div class="legend-card">
         <div class="legend-title">📋 Legendă Categorii</div>
         <div class="legend-items">
@@ -186,7 +188,7 @@
     </div>
 
 <script>
-    // Lista aranjată de la început direct în ordine cronologică pură
+    // Lista cronologică stabilă
     const tasks = [
         { id: "t1", category: "health", interval: "06:00 - 06:30", name: "Trezirea" },
         { id: "t2", category: "health", interval: "06:30 - 07:30", name: "Mers pe jos 1h" },
@@ -204,18 +206,43 @@
         { id: "t14", category: "personal", interval: "21:00 - 22:00", name: "Chitara / citit / masaj / meditat" }
     ];
 
-    // Citire bife salvate din memoria locală a browserului
-    let savedState = JSON.parse(localStorage.getItem('my_chrono_routine_v1')) || {};
+    const labels = { 
+        health: "🟢 Sănătate & Sport", 
+        work: "🔵 Muncă / Carieră", 
+        personal: "🟣 Stil de viață / Personal" 
+    };
 
+    // Păstrăm în memorie și data ultimei accesări pentru a ști când se schimbă ziua
+    let savedData = JSON.parse(localStorage.getItem('my_routine_data_v2')) || {
+        bife: {},
+        ultimaData: ""
+    };
+
+    // Funcție nativă simplă pentru a obține data de azi în format YYYY-MM-DD
+    function obtineDataCurenta() {
+        const d = new Date();
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+    }
+
+    // Funcția principală care verifică resetarea la 00:00 și desenează interfața
     function renderChronoApp() {
+        const dataAzi = obtineDataCurenta();
+
+        // [LOGICĂ RESETARE 00:00] Dacă data curentă a sistemului s-a schimbat față de ultima salvare, ștergem bifele
+        if (savedData.ultimaData !== "" && savedData.ultimaData !== dataAzi) {
+            savedData.bife = {};
+        }
+        
+        // Actualizăm data ultimei accesări cu ziua de azi
+        savedData.ultimaData = dataAzi;
+        localStorage.setItem('my_routine_data_v2', JSON.stringify(savedData));
+
         const container = document.getElementById('tasksContainer');
         container.innerHTML = '';
-
         let html = '';
 
-        // Randăm direct elementele în ordinea din array (care este deja cronologică)
         tasks.forEach(task => {
-            const isChecked = savedState[task.id] || false;
+            const isChecked = savedData.bife[task.id] || false;
             const doneClass = isChecked ? ' done' : '';
 
             html += '<div class="task-row type-' + task.category + doneClass + '">' +
@@ -229,18 +256,21 @@
 
         container.innerHTML = html;
 
-        // Adăugare eveniment pentru salvarea bifelor la click
+        // Ascultare bife și salvare stare
         document.querySelectorAll('.task-check').forEach(box => {
             box.addEventListener('change', function(e) {
                 const tId = e.target.getAttribute('data-id');
-                savedState[tId] = e.target.checked;
-                localStorage.setItem('my_chrono_routine_v1', JSON.stringify(savedState));
-                renderChronoApp(); // Re-randare instantă pentru aplicarea tăierii textului
+                savedData.bife[tId] = e.target.checked;
+                localStorage.setItem('my_routine_data_v2', JSON.stringify(savedData));
+                renderChronoApp(); 
             });
         });
     }
 
-    // Pornire aplicație
+    // Verificator automat de fundal: rulează în fiecare minut pentru a prinde miezul nopții (00:00) chiar dacă pagina e lăsată deschisă
+    setInterval(renderChronoApp, 60000);
+
+    // Pornire aplicație la încărcarea paginii
     renderChronoApp();
 </script>
 </body>
