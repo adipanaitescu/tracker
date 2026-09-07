@@ -216,18 +216,18 @@
     const categoriesContainer = document.getElementById('categoriesContainer');
     const sourceBadge = document.getElementById('sourceBadge');
 
-    function obtineStringData(obiectData) {
-        const y = obiectData.getFullYear();
-        const m = String(obiectData.getMonth() + 1).padStart(2, '0');
-        const d = String(obiectData.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
+    // Înlocuire cu o metodă primitivă ultra-sigură de generare a datei curente (YYYY-MM-DD)
+    const dAcum = new Date();
+    const strAn = dAcum.getFullYear();
+    const strLuna = String(dAcum.getMonth() + 1).padStart(2, '0');
+    const strZi = String(dAcum.getDate()).padStart(2, '0');
+    const AZI_STANDARD = strAn + "-" + strLuna + "-" + strZi;
+    
+    // Setăm valoarea inițială
+    datePicker.value = AZI_STANDARD;
 
-    const astaziStandard = obtineStringData(new Date());
-    datePicker.value = astaziStandard;
-
-    function luareIstoric() { return JSON.parse(localStorage.getItem('routine_history_v11')) || {}; }
-    function salvareIstoric(ist) { localStorage.setItem('routine_history_v11', JSON.stringify(ist)); }
+    function luareIstoric() { return JSON.parse(localStorage.getItem('routine_history_v12')) || {}; }
+    function salvareIstoric(ist) { localStorage.setItem('routine_history_v12', JSON.stringify(ist)); }
 
     async function incarcaDate() {
         try {
@@ -241,4 +241,3 @@
                     if(!linie) return;
                     const col = linie.split(",");
                     if (col.length >= 3) {
-                        const oraAlerta = col[3] ? col[3].trim() : "00:00";
