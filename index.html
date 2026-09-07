@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v05</title>
+    <title>Program Zilnic v06</title>
     <style>
         :root {
             --color-health: #F08209;
@@ -131,19 +131,11 @@
             height: 10px;
             border-radius: 50%;
         }
-
-        .loading {
-            padding: 30px;
-            text-align: center;
-            color: var(--text-muted);
-            font-style: italic;
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 <body>
 
-    <h1>Program Zilnic v05</h1>
+    <h1>Program Zilnic v06</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -160,7 +152,7 @@
         </div>
         
         <div id="tasks-body">
-            <div class="loading">Se inițializează structura...</div>
+            <!-- Eliminat mesajul de loading static pentru a evita blocajele vizuale -->
         </div>
     </div>
 
@@ -170,7 +162,6 @@
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-personal)"></span> Stil de viață / Personal</div>
     </div>
 
-    <!-- SCRIPTUL A FOST MUTAT JOS: Toate elementele DOM de mai sus sunt acum complet accesibile securizat -->
     <script>
         const csvUrl = 'https://google.com';
         
@@ -194,35 +185,30 @@
         const masterCheck = document.getElementById('master-check');
         const tasksBody = document.getElementById('tasks-body');
 
-        function normalizeTime(timeStr) {
-            if (!timeStr) return "";
-            return timeStr.toString().trim();
-        }
-
         function renderRows(tasksArray) {
-            const dataToRender = (Array.isArray(tasksArray) && tasksArray.length > 0) ? tasksArray : backupTasks;
-            
             if (!tasksBody) return;
-            tasksBody.innerHTML = ''; 
             
-            dataToRender.forEach(task => {
-                const row = document.createElement('div');
-                const safeCat = (task.categorie || 'personal').trim().toLowerCase();
-                row.className = `grid-row cat-${safeCat}`;
-                row.setAttribute('data-start', normalizeTime(task.oraAlerta));
+            let htmlBuffer = '';
+            tasksArray.forEach(task => {
+                const safeCat = (task.categorie || 'personal').toString().trim().toLowerCase();
+                const safeInterval = (task.interval || '').toString().trim();
+                const safeTask = (task.task || '').toString().trim();
+                const safeAlert = (task.oraAlerta || '').toString().trim();
                 
-                row.innerHTML = `
-                    <div class="col-time">${task.interval || ''}</div>
-                    <div class="col-task">${task.task || ''}</div>
-                    <div class="col-check"><input type="checkbox" class="task-check"></div>
+                htmlBuffer += `
+                    <div class="grid-row cat-${safeCat}" data-start="${safeAlert}">
+                        <div class="col-time">${safeInterval}</div>
+                        <div class="col-task">${safeTask}</div>
+                        <div class="col-check"><input type="checkbox" class="task-check"></div>
+                    </div>
                 `;
-                tasksBody.appendChild(row);
             });
+            
+            tasksBody.innerHTML = htmlBuffer;
             initCheckboxesLogic();
         }
 
-        // Parser nativ complet protejat (Fără regex sau biblioteci externe susceptibile la block)
-        function parseCSVNative(text) {
+        function parseCSVSecure(text) {
             const lines = text.split(/\r?\n/);
             const parsedTasks = [];
 
@@ -230,7 +216,6 @@
                 const line = lines[i];
                 if (!line) continue;
 
-                // Împărțire securizată ce ignoră virgulele dintre ghilimelele din Google Sheets
                 let result = [];
                 let current = '';
                 let inQuotes = false;
@@ -265,6 +250,22 @@
 
             try {
                 const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error();
+                if (!response.ok) return;
                 const csvText = await response.text();
-                const tasks = parseCSVNative(csvText);
+                const tasks = parseCSVSecure(csvText);
+                if (tasks && tasks.length > 0) {
+                    renderRows(tasks);
+                }
+            } catch (error) {
+                console.warn("Eroare silentioasa retea. Structura locala ramane activa.");
+            }
+        }
+
+        function initCheckboxesLogic() {
+            const taskChecks = document.querySelectorAll('.task-check');
+            if (taskChecks.length === 0 || !masterCheck) return;
+            
+            masterCheck.checked = false;
+            masterCheck.indeterminate = false;
+
+            masterCheck.onclick = () => {
