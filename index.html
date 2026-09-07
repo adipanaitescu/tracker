@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v03</title>
-    <!-- Standardul industriei pentru procesare robustă de fluxuri CSV -->
+    <title>Program Zilnic v04</title>
+    <!-- Motor stabil pentru procesare CSV -->
     <script src="https://cloudflare.com" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         :root {
@@ -145,7 +145,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v03</h1>
+    <h1>Program Zilnic v04</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -197,10 +197,10 @@
 
         function normalizeTime(timeStr) {
             if (!timeStr) return "";
-            let clean = timeStr.trim();
+            let clean = timeStr.toString().trim();
             if (clean.includes(':')) {
                 const parts = clean.split(':');
-                if (parts[0].length === 1) {
+                if (parts.length === 2 && parts[0].length === 1) {
                     clean = '0' + clean;
                 }
             }
@@ -208,12 +208,10 @@
         }
 
         function renderRows(tasksArray) {
-            if (!Array.isArray(tasksArray) || tasksArray.length === 0) {
-                tasksArray = backupTasks;
-            }
+            const dataToRender = (Array.isArray(tasksArray) && tasksArray.length > 0) ? tasksArray : backupTasks;
             
             tasksBody.innerHTML = ''; 
-            tasksArray.forEach(task => {
+            dataToRender.forEach(task => {
                 const row = document.createElement('div');
                 const safeCat = (task.categorie || 'personal').trim().toLowerCase();
                 row.className = `grid-row cat-${safeCat}`;
@@ -230,7 +228,6 @@
         }
 
         async function loadSheetData() {
-            // Evaluare context de execuție: Protocol local file:// -> Execuție deterministică instantă pe Backup
             if (window.location.protocol === 'file:') {
                 renderRows(backupTasks);
                 return;
@@ -238,21 +235,25 @@
 
             try {
                 const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error(`HTTP network error: ${response.status}`);
+                if (!response.ok) throw new Error(`HTTP: ${response.status}`);
                 const csvText = await response.text();
                 
-                // Parsare robustă prin motorul industrial PapaParse
                 Papa.parse(csvText, {
-                    header: true, // Folosește primul rând din Google Sheets ca chei de mapare obiecte
+                    header: false, // Citire brută pe indici numerici fixi pentru stabilitate absolută
                     skipEmptyLines: true,
                     complete: function(results) {
                         const parsedTasks = [];
-                        if (results && results.data) {
-                            results.data.forEach(row => {
-                                // Mapare dinamică agnostic-case bazată pe poziție / headere standard
-                                const keys = Object.keys(row);
-                                if (keys.length >= 4) {
+                        if (results && results.data && results.data.length > 1) {
+                            // Sărim indexul 0 (capul de tabel)
+                            for(let i = 1; i < results.data.length; i++) {
+                                const row = results.data[i];
+                                if (row && row.length >= 4) {
                                     parsedTasks.push({
-                                        categorie: row[keys[0]] ? row[keys[0]].toString() : '',
-                                        interval: row[keys[1]] ? row[keys[1]].toString() : '',
-                                        task: row[keys[2]] ? row[keys[2]].toString() : '',
+                                        categorie: row[0] ? row[0].toString() : '',
+                                        interval: row[1] ? row[1].toString() : '',
+                                        task: row[2] ? row[2].toString() : '',
+                                        oraAlerta: row[3] ? row[3].toString() : ''
+                                    });
+                                }
+                            }
+                        }
