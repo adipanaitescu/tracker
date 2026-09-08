@@ -161,7 +161,8 @@
     </div>
 
     <script>
-        const csvUrl = 'https://google.com';
+        // Sursa reala din Google Sheets (exportata ca CSV)
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQDKIr1CRKpf_7bI9tyF2xfrhqaLYCeiD2hX7KJzxCWgMsg9NsItQqT4XEF9uTlY04687OKJBNowfs/pub?output=csv';
         
         const backupTasks = [
             { categorie: "health", interval: "06:00 - 06.30", task: "Trezirea", oraAlerta: "06:00" },
@@ -183,6 +184,9 @@
         const masterCheck = document.getElementById('master-check');
         const tasksBody = document.getElementById('tasks-body');
 
+        // Încarcă statusul din LocalStorage sau creează un obiect nou
+        let checkedTasksHistory = JSON.parse(localStorage.getItem('saved_tasks_status')) || {};
+
         function renderRows(tasksArray) {
             if (!tasksBody) return;
             
@@ -193,17 +197,25 @@
                 const safeTask = (task.task || '').toString().trim();
                 const safeAlert = (task.oraAlerta || '').toString().trim();
                 
+                // Generăm o cheie unică bazată pe oră și nume pentru a ști ce a fost bifat
+                const taskKey = `${safeAlert}_${safeTask.replace(/\s+/g, '')}`;
+                const isChecked = checkedTasksHistory[taskKey] ? 'checked' : '';
+                const isDoneClass = checkedTasksHistory[taskKey] ? 'done' : '';
+
                 htmlBuffer += `
-                    <div class="grid-row cat-${safeCat}" data-start="${safeAlert}">
+                    <div class="grid-row cat-${safeCat} ${isDoneClass}" data-key="${taskKey}">
                         <div class="col-time">${safeInterval}</div>
                         <div class="col-task">${safeTask}</div>
-                        <div class="col-check"><input type="checkbox" class="task-check"></div>
+                        <div class="col-check">
+                            <input type="checkbox" class="task-check" ${isChecked}>
+                        </div>
                     </div>
                 `;
             });
             
             tasksBody.innerHTML = htmlBuffer;
             initCheckboxesLogic();
+            updateMasterCheckboxState();
         }
 
         function cleanString(str) {
@@ -211,12 +223,14 @@
             return str.replace(/^"|"$/g, '').trim();
         }
 
+                // Funcția de parsare CSV corectă, capabilă să ignore virgulele din interiorul ghilimelelor
         function parseCSVSecure(text) {
             const lines = text.split(/\r?\n/);
             const parsedTasks = [];
 
+            // Presupunem ordinea coloanelor din foaie: Categorie, Interval, Task, OraAlerta
             for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
+                const line = lines[i].trim();
                 if (!line) continue;
 
                 let columns = [];
@@ -228,48 +242,24 @@
                     if (char === '"') {
                         inQuotes = !inQuotes;
                     } else if (char === ',' && !inQuotes) {
-                        columns.push(current);
+                        columns.push(cleanString(current));
                         current = '';
                     } else {
                         current += char;
                     }
                 }
-                columns.push(current);
+                columns.push(cleanString(current));
 
-                if (columns.length >= 4) {
+                // Mapăm coloanele pe structura aplicației
+                if (columns.length >= 3) {
                     parsedTasks.push({
-                        categorie: cleanString(columns[0]),
-                        interval: cleanString(columns[1]),
-                        task: cleanString(columns[2]),
-                        oraAlerta: cleanString(columns[3])
+                        categorie: columns[0] || 'personal',
+                        interval: columns[1] || '',
+                        task: columns[2] || '',
+                        oraAlerta: columns[3] || (columns[1] ? columns[1].split('-')[0].trim() : '')
                     });
                 }
             }
-            return parsedTasks;
+            return parsedTasks.length > 0 ? parsedTasks : null;
         }
 
-        async function loadSheetData() {
-            if (window.location.protocol === 'file:') return;
-
-            try {
-                const response = await fetch(csvUrl);
-                if (!response.ok) return;
-                const csvText = await response.text();
-                const tasks = parseCSVSecure(csvText);
-                if (tasks && tasks.length > 0) {
-                    renderRows(tasks);
-                }
-            } catch (error) {
-                console.warn("Eroare de rețea. Structura locală rămâne activă.");
-            }
-        }
-
-        function initCheckboxesLogic() {
-            const taskChecks = document.querySelectorAll('.task-check');
-            if (taskChecks.length === 0 || !masterCheck) return;
-            
-            masterCheck.checked = false;
-            masterCheck.indeterminate = false;
-
-            masterCheck.onclick = () => {
-                const isChecked = masterCheck.checked;
