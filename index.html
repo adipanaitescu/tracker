@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic V18</title>
+    <title>Program Zilnic v19</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -51,7 +51,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic V18</h1>
+    <h1>Program Zilnic v19</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -75,9 +75,8 @@
     </div>
 
     <script>
-        // 1. ÎNLOCUIEȘTE 'YOUR_SPREADSHEET_ID' cu id-ul tău real de la Google Sheet!
-        const SHEET_ID = 'YOUR_SPREADSHEET_ID';
-        const csvUrl = `https://google.com{SHEET_ID}/pub?output=csv`;
+        // Adresa URL către Google Sheet-ul tău publicat sub formă de CSV
+        const csvUrl = 'https://google.com';
         
         let globalTasksBuffer = []; 
         let currentDateString = ""; 
@@ -103,42 +102,36 @@
             { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
         ];
 
-        // Încarcă datele live din Google Sheets
+        // Încarcă datele live ocolind mecanismele de cache ale browserului
         async function fetchLiveGoogleData() {
-            if (SHEET_ID === 'YOUR_SPREADSHEET_ID') {
-                console.warn("Folosești datele backup. Adaugă ID-ul Google Sheet pentru actualizări live.");
-                globalTasksBuffer = backupTasks;
-                renderRows(globalTasksBuffer);
-                return;
-            }
             try {
-                // Adăugarea parametrului cache-buster ?cb=Date.now() forțează preluarea modificărilor proaspete
                 const response = await fetch(`${csvUrl}&cb=${Date.now()}`);
                 const dataText = await response.text();
                 globalTasksBuffer = parseCSV(dataText);
                 renderRows(globalTasksBuffer);
             } catch (error) {
-                console.error("Eroare la preluarea datelor din Google Sheets, se folosesc datele backup:", error);
+                console.error("Eroare la preluarea datelor, folosim backupTasks:", error);
                 globalTasksBuffer = backupTasks;
                 renderRows(globalTasksBuffer);
             }
         }
 
-        // Parsează structura text din formatul CSV primit din Google Sheets
+        // Parsează fișierul CSV obținut din Google Sheet
         function parseCSV(text) {
             const linii = text.split(/\r?\n/);
             const arrayRezultat = [];
-            // Sărim peste prima linie dacă conține capul de tabel (ex: Categorie, Interval, Task...)
+            
+            // i = 1 pentru a trece peste capul de tabel (Categorie, Interval, Task, Ora alerta)
             for (let i = 1; i < linii.length; i++) {
                 if (!linii[i].trim()) continue;
-                // Gestionează rândurile despărțite prin virgulă simplă
+                
                 const celule = linii[i].split(',');
                 if (celule.length >= 3) {
                     arrayRezultat.push({
                         categorie: celule[0].replace(/"/g, '').trim().toLowerCase(),
                         interval: celule[1].replace(/"/g, '').trim(),
                         task: celule[2].replace(/"/g, '').trim(),
-                        oraAlerta: celule[3] ? celule[3].replace(/"/g, '').trim() : celule[1].split('-')[0].trim()
+                        oraAlerta: celule[3] ? celule[3].replace(/"/g, '').trim() : ""
                     });
                 }
             }
@@ -162,7 +155,7 @@
                 tasksBody.appendChild(row);
             });
 
-                        // Ascultă evenimentele pe noile checkbox-uri generate
+            // Evenimente pentru checkbox-uri
             document.querySelectorAll('#tasks-body input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     const idx = this.getAttribute('data-index');
@@ -176,7 +169,7 @@
             actualizeazaMasterCheck();
         }
 
-        function actualizeazaMasterCheck() {
+                function actualizeazaMasterCheck() {
             if (!masterCheck) return;
             const toateCheckboxurile = document.querySelectorAll('#tasks-body input[type="checkbox"]');
             if (toateCheckboxurile.length === 0) { masterCheck.checked = false; return; }
@@ -218,9 +211,9 @@
         }
 
         function schimbaZiua(directie) {
-            let d = new Date(currentDateString);
-            d.setDate(d.getDate() + directie);
-            currentDateString = formateazaDataLocal(d);
+            let dObj = new Date(currentDateString);
+            dObj.setDate(dObj.getDate() + directie);
+            currentDateString = formateazaDataLocal(dObj);
             if (datePicker) datePicker.value = currentDateString;
             renderRows(globalTasksBuffer);
         }
