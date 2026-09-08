@@ -21,13 +21,10 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
         .archive-controls button { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 5px 10px; color: #475569; }
-        
-        /* Fortam formatul vizual curat pentru data picker */
         .archive-controls input[type="date"] { 
             border: none; font-weight: 700; color: #1e293b; font-family: inherit; 
             font-size: 0.95rem; outline: none; cursor: pointer;
         }
-        
         .table-container {
             width: 100%; max-width: 550px; background-color: #ffffff; border-radius: 12px;
             overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
@@ -78,8 +75,10 @@
     </div>
 
     <script>
-        // Adăugăm o metodă alternativă de citire prin rețea pentru a ocoli blocajele de rețea
-        const csvUrl = 'https://google.com';
+        // 1. ÎNLOCUIEȘTE 'YOUR_SPREADSHEET_ID' cu id-ul tău real de la Google Sheet!
+        const SHEET_ID = 'YOUR_SPREADSHEET_ID';
+        const csvUrl = `https://google.com{SHEET_ID}/pub?output=csv`;
+        
         let globalTasksBuffer = []; 
         let currentDateString = ""; 
 
@@ -104,6 +103,100 @@
             { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
         ];
 
+        // Încarcă datele live din Google Sheets
+        async function fetchLiveGoogleData() {
+            if (SHEET_ID === 'YOUR_SPREADSHEET_ID') {
+                console.warn("Folosești datele backup. Adaugă ID-ul Google Sheet pentru actualizări live.");
+                globalTasksBuffer = backupTasks;
+                renderRows(globalTasksBuffer);
+                return;
+            }
+            try {
+                // Adăugarea parametrului cache-buster ?cb=Date.now() forțează preluarea modificărilor proaspete
+                const response = await fetch(`${csvUrl}&cb=${Date.now()}`);
+                const dataText = await response.text();
+                globalTasksBuffer = parseCSV(dataText);
+                renderRows(globalTasksBuffer);
+            } catch (error) {
+                console.error("Eroare la preluarea datelor din Google Sheets, se folosesc datele backup:", error);
+                globalTasksBuffer = backupTasks;
+                renderRows(globalTasksBuffer);
+            }
+        }
+
+        // Parsează structura text din formatul CSV primit din Google Sheets
+        function parseCSV(text) {
+            const linii = text.split(/\r?\n/);
+            const arrayRezultat = [];
+            // Sărim peste prima linie dacă conține capul de tabel (ex: Categorie, Interval, Task...)
+            for (let i = 1; i < linii.length; i++) {
+                if (!linii[i].trim()) continue;
+                // Gestionează rândurile despărțite prin virgulă simplă
+                const celule = linii[i].split(',');
+                if (celule.length >= 3) {
+                    arrayRezultat.push({
+                        categorie: celule[0].replace(/"/g, '').trim().toLowerCase(),
+                        interval: celule[1].replace(/"/g, '').trim(),
+                        task: celule[2].replace(/"/g, '').trim(),
+                        oraAlerta: celule[3] ? celule[3].replace(/"/g, '').trim() : celule[1].split('-')[0].trim()
+                    });
+                }
+            }
+            return arrayRezultat.length > 0 ? arrayRezultat : backupTasks;
+        }
+
+        function renderRows(tasks) {
+            if (!tasksBody) return;
+            tasksBody.innerHTML = '';
+            const statusSalvat = iaIstoricZiCurenta();
+
+            tasks.forEach((item, index) => {
+                const esteBifat = statusSalvat[index] || false;
+                const row = document.createElement('div');
+                row.className = `grid-row cat-${item.categorie} ${esteBifat ? 'done' : ''}`;
+                row.innerHTML = `
+                    <div class="col-time">${item.interval}</div>
+                    <div class="col-task">${item.task}</div>
+                    <div class="col-check"><input type="checkbox" data-index="${index}" ${esteBifat ? 'checked' : ''}></div>
+                `;
+                tasksBody.appendChild(row);
+            });
+
+                        // Ascultă evenimentele pe noile checkbox-uri generate
+            document.querySelectorAll('#tasks-body input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const idx = this.getAttribute('data-index');
+                    const statusCurent = iaIstoricZiCurenta();
+                    statusCurent[idx] = this.checked;
+                    salveazaIstoricZiCurenta(statusCurent);
+                    this.closest('.grid-row').classList.toggle('done', this.checked);
+                    actualizeazaMasterCheck();
+                });
+            });
+            actualizeazaMasterCheck();
+        }
+
+        function actualizeazaMasterCheck() {
+            if (!masterCheck) return;
+            const toateCheckboxurile = document.querySelectorAll('#tasks-body input[type="checkbox"]');
+            if (toateCheckboxurile.length === 0) { masterCheck.checked = false; return; }
+            const toateSuntBifate = Array.from(toateCheckboxurile).every(cb => cb.checked);
+            masterCheck.checked = toateSuntBifate;
+        }
+
+        if (masterCheck) {
+            masterCheck.addEventListener('change', function() {
+                const statusCurent = iaIstoricZiCurenta();
+                document.querySelectorAll('#tasks-body input[type="checkbox"]').forEach(cb => {
+                    cb.checked = this.checked;
+                    const idx = cb.getAttribute('data-index');
+                    statusCurent[idx] = this.checked;
+                    cb.closest('.grid-row').classList.toggle('done', this.checked);
+                });
+                salveazaIstoricZiCurenta(statusCurent);
+            });
+        }
+
         function formateazaDataLocal(obiectData) {
             const an = obiectData.getFullYear();
             const luna = String(obiectData.getMonth() + 1).padStart(2, '0');
@@ -113,7 +206,6 @@
 
         function initCalendar() {
             currentDateString = formateazaDataLocal(new Date());
-            
             if (datePicker) {
                 datePicker.value = currentDateString;
                 datePicker.addEventListener('change', function() {
@@ -143,126 +235,9 @@
             localStorage.setItem(cheieInLocalStorage, JSON.stringify(istoric));
         }
 
-        function renderRows(tasksArray) {
-            if (!tasksBody) return;
-            const checkedTasksHistory = iaIstoricZiCurenta();
-            let htmlBuffer = '';
-
-            tasksArray.forEach(task => {
-                const safeCat = (task.categorie || 'personal').toString().trim().toLowerCase();
-                const safeInterval = (task.interval || '').toString().trim();
-                const safeTask = (task.task || '').toString().trim();
-                const safeAlert = (task.oraAlerta || '').toString().trim();
-                
-                const taskKey = `${safeAlert}_${safeTask.replace(/\s+/g, '')}`;
-                const isChecked = checkedTasksHistory[taskKey] ? 'checked' : '';
-                const isDoneClass = checkedTasksHistory[taskKey] ? 'done' : '';
-
-                htmlBuffer += `
-                    <div class="grid-row cat-${safeCat} ${isDoneClass}" data-key="${taskKey}">
-                        <div class="col-time">${safeInterval}</div>
-                        <div class="col-task">${safeTask}</div>
-                        <div class="col-check"><input type="checkbox" class="task-check" ${isChecked}></div>
-                    </div>
-                `;
-            });
-            tasksBody.innerHTML = htmlBuffer;
-            initCheckboxesLogic();
-            updateMasterCheckboxState();
-        }
-
-                function parseCSVSecure(text) {
-            const lines = text.split(/\r?\n/);
-            const parsedTasks = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-
-                let columns = [];
-                let current = '';
-                let inQuotes = false;
-
-                for (let j = 0; j < line.length; j++) {
-                    const char = line[j];
-                    if (char === '"') { inQuotes = !inQuotes; }
-                    else if (char === ',' && !inQuotes) { columns.push(current.replace(/^"|"$/g, '').trim()); current = ''; }
-                    else { current += char; }
-                }
-                columns.push(current.replace(/^"|"$/g, '').trim());
-
-                if (columns.length >= 3) {
-                    const finalCat = columns.shift() || 'personal';
-                    const finalInterval = columns.shift() || '';
-                    const finalTask = columns.shift() || '';
-                    let finalAlert = columns.shift() || '';
-                    if (!finalAlert && finalInterval) {
-                        const partiInterval = finalInterval.split('-');
-                        finalAlert = partiInterval.shift().trim();
-                    }
-                    parsedTasks.push({ categorie: finalCat, interval: finalInterval, task: finalTask, oraAlerta: finalAlert });
-                }
-            }
-            return parsedTasks.length > 0 ? parsedTasks : null;
-        }
-
-        function initCheckboxesLogic() {
-            document.querySelectorAll('.task-check').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const row = this.closest('.grid-row');
-                    const taskKey = row.getAttribute('data-key');
-                    let istoric = iaIstoricZiCurenta();
-
-                    if (this.checked) { row.classList.add('done'); istoric[taskKey] = true; }
-                    else { row.classList.remove('done'); delete istoric[taskKey]; }
-
-                    salveazaIstoricZiCurenta(istoric);
-                    updateMasterCheckboxState();
-                });
-            });
-        }
-
-        if (masterCheck) {
-            masterCheck.addEventListener('change', function() {
-                let istoric = iaIstoricZiCurenta();
-                document.querySelectorAll('.task-check').forEach(checkbox => {
-                    const row = checkbox.closest('.grid-row');
-                    const taskKey = row.getAttribute('data-key');
-                    checkbox.checked = this.checked;
-                    if (this.checked) { row.classList.add('done'); istoric[taskKey] = true; }
-                    else { row.classList.remove('done'); delete istoric[taskKey]; }
-                });
-                salveazaIstoricZiCurenta(istoric);
-            });
-        }
-
-        function updateMasterCheckboxState() {
-            if (!masterCheck) return;
-            const checks = document.querySelectorAll('.task-check');
-            if (checks.length === 0) return;
-            masterCheck.checked = Array.from(checks).every(cb => cb.checked);
-        }
-
-        async function fetchTasks() {
-            initCalendar();
-            try {
-                // Adăugăm un proxy CORS public pentru a forța descărcarea din Google Sheets pe bune
-                const proxyUrl = "https://allorigins.win" + encodeURIComponent(csvUrl);
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('Eroare retea proxy');
-                
-                const csvText = await response.text();
-                const freshTasks = parseCSVSecure(csvText);
-                
-                globalTasksBuffer = freshTasks ? freshTasks : backupTasks;
-                renderRows(globalTasksBuffer);
-            } catch (error) {
-                console.warn("Eroare incarcare Google Sheets prin proxy, se folosesc datele backup", error);
-                globalTasksBuffer = backupTasks;
-                renderRows(globalTasksBuffer);
-            }
-        }
-        window.addEventListener('DOMContentLoaded', fetchTasks);
+        // Pornire aplicație
+        initCalendar();
+        fetchLiveGoogleData();
     </script>
 </body>
 </html>
