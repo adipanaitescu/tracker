@@ -239,18 +239,31 @@
             masterCheck.checked = Array.from(checks).every(cb => cb.checked);
         }
 
-        async function fetchTasks() {
+                async function fetchTasks() {
             initCalendar();
             try {
-                const response = await fetch(csvUrl + "&cache_bust=" + Date.now());
+                // Corectăm adăugarea parametrului pentru a nu strica link-ul original Google Sheets
+                const cacheBusterUrl = csvUrl + "&cache_bust=" + Date.now();
+                
+                const response = await fetch(cacheBusterUrl);
                 if (!response.ok) throw new Error('Eroare retea');
                 const csvText = await response.text();
+                
                 globalTasksBuffer = parseCSVSecure(csvText) || [];
+                
+                // Dacă parsarea a eșuat sau e goală, încărcăm totuși datele de backup ca să nu rămână tabelul gol
+                if (globalTasksBuffer.length === 0) {
+                    globalTasksBuffer = backupTasks;
+                }
+                
                 renderRows(globalTasksBuffer);
             } catch (error) {
-                console.warn("Eroare la incarcarea Google Sheets", error);
+                console.warn("Eroare la incarcarea Google Sheets, se folosesc datele de rezerva:", error);
+                globalTasksBuffer = backupTasks;
+                renderRows(globalTasksBuffer);
             }
         }
+
 
         window.addEventListener('DOMContentLoaded', fetchTasks);
     </script>
