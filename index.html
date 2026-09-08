@@ -163,34 +163,73 @@
             updateMasterCheckboxState();
         }
 
-        function parseCSVSecure(text) {
+                function parseCSVSecure(text) {
             const lines = text.split(/\r?\n/);
             const parsedTasks = [];
+
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                let columns = [], current = '', inQuotes = false;
+
+                let columns = [];
+                let current = '';
+                let inQuotes = false;
+
                 for (let j = 0; j < line.length; j++) {
                     const char = line[j];
-                    if (char === '"') { inQuotes = !inQuotes; }
-                    else if (char === ',' && !inQuotes) { columns.push(current.replace(/^"|"$/g, '').trim()); current = ''; }
-                    else { current += char; }
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        columns.push(current.replace(/^"|"$/g, '').trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
                 }
                 columns.push(current.replace(/^"|"$/g, '').trim());
 
                 if (columns.length >= 3) {
-                    const [rawCat, rawInterval, rawTask, rawAlert] = columns;
-                    let finalAlert = rawAlert;
-                    if (!finalAlert && rawInterval) { finalAlert = rawInterval.split('-')[0].trim(); }
+                    const finalCat = columns[0] || 'personal';
+                    const finalInterval = columns[1] || '';
+                    const finalTask = columns[2] || '';
+                    
+                    // Extragem simplu ora de alerta (prima parte din interval) fara functii care blocheaza scriptul
+                    let finalAlert = columns[3] || '';
+                    if (!finalAlert && finalInterval) {
+                        finalAlert = finalInterval.split('-')[0].trim();
+                    }
 
                     parsedTasks.push({
-                        categorie: rawCat || 'personal', interval: rawInterval || '',
-                        task: rawTask || '', oraAlerta: finalAlert || ''
+                        categorie: finalCat,
+                        interval: finalInterval,
+                        task: finalTask,
+                        oraAlerta: finalAlert
                     });
                 }
             }
             return parsedTasks.length > 0 ? parsedTasks : null;
         }
+
+        async function fetchTasks() {
+            initCalendar();
+            try {
+                const cacheBusterUrl = csvUrl + "&cache_bust=" + Date.now();
+                const response = await fetch(cacheBusterUrl);
+                if (!response.ok) throw new Error('Eroare retea');
+                
+                const csvText = await response.text();
+                const freshTasks = parseCSVSecure(csvText);
+                
+                // Daca parsarea a reusit, salvam datele primite, altfel le folosim pe cele de rezerva
+                globalTasksBuffer = freshTasks ? freshTasks : backupTasks;
+                renderRows(globalTasksBuffer);
+            } catch (error) {
+                console.warn("Eroare la incarcarea Google Sheets, se folosesc datele de rezerva:", error);
+                globalTasksBuffer = backupTasks;
+                renderRows(globalTasksBuffer);
+            }
+        }
+
 
               function initCheckboxesLogic() {
             document.querySelectorAll('.task-check').forEach(checkbox => {
@@ -238,32 +277,6 @@
             if (checks.length === 0) return;
             masterCheck.checked = Array.from(checks).every(cb => cb.checked);
         }
-
-                async function fetchTasks() {
-            initCalendar();
-            try {
-                // Corectăm adăugarea parametrului pentru a nu strica link-ul original Google Sheets
-                const cacheBusterUrl = csvUrl + "&cache_bust=" + Date.now();
-                
-                const response = await fetch(cacheBusterUrl);
-                if (!response.ok) throw new Error('Eroare retea');
-                const csvText = await response.text();
-                
-                globalTasksBuffer = parseCSVSecure(csvText) || [];
-                
-                // Dacă parsarea a eșuat sau e goală, încărcăm totuși datele de backup ca să nu rămână tabelul gol
-                if (globalTasksBuffer.length === 0) {
-                    globalTasksBuffer = backupTasks;
-                }
-                
-                renderRows(globalTasksBuffer);
-            } catch (error) {
-                console.warn("Eroare la incarcarea Google Sheets, se folosesc datele de rezerva:", error);
-                globalTasksBuffer = backupTasks;
-                renderRows(globalTasksBuffer);
-            }
-        }
-
 
         window.addEventListener('DOMContentLoaded', fetchTasks);
     </script>
