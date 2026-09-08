@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v16</title>
+    <title>Program Zilnic v17</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -21,7 +21,13 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
         .archive-controls button { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 5px 10px; color: #475569; }
-        .archive-controls input[type="date"] { border: none; font-weight: 700; color: #1e293b; font-family: inherit; font-size: 0.95rem; outline: none; cursor: pointer; }
+        
+        /* Fortam formatul vizual curat pentru data picker */
+        .archive-controls input[type="date"] { 
+            border: none; font-weight: 700; color: #1e293b; font-family: inherit; 
+            font-size: 0.95rem; outline: none; cursor: pointer;
+        }
+        
         .table-container {
             width: 100%; max-width: 550px; background-color: #ffffff; border-radius: 12px;
             overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
@@ -48,11 +54,11 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v16</h1>
+    <h1>Program Zilnic v17</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
-        <input type="date" id="date-picker">
+        <input type="date" id="date-picker" lang="ro-RO">
         <button id="btn-next-day" title="Ziua următoare">▶</button>
     </div>
 
@@ -72,6 +78,7 @@
     </div>
 
     <script>
+        // Adăugăm o metodă alternativă de citire prin rețea pentru a ocoli blocajele de rețea
         const csvUrl = 'https://google.com';
         let globalTasksBuffer = []; 
         let currentDateString = ""; 
@@ -97,7 +104,6 @@
             { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
         ];
 
-        // Formatează o dată de tip obiect Date în format curat YYYY-MM-DD
         function formateazaDataLocal(obiectData) {
             const an = obiectData.getFullYear();
             const luna = String(obiectData.getMonth() + 1).padStart(2, '0');
@@ -240,14 +246,18 @@
         async function fetchTasks() {
             initCalendar();
             try {
-                const response = await fetch(csvUrl, { cache: "no-store" });
-                if (!response.ok) throw new Error('Eroare retea');
+                // Adăugăm un proxy CORS public pentru a forța descărcarea din Google Sheets pe bune
+                const proxyUrl = "https://allorigins.win" + encodeURIComponent(csvUrl);
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('Eroare retea proxy');
+                
                 const csvText = await response.text();
                 const freshTasks = parseCSVSecure(csvText);
+                
                 globalTasksBuffer = freshTasks ? freshTasks : backupTasks;
                 renderRows(globalTasksBuffer);
             } catch (error) {
-                console.warn("Se folosesc datele de rezerva", error);
+                console.warn("Eroare incarcare Google Sheets prin proxy, se folosesc datele backup", error);
                 globalTasksBuffer = backupTasks;
                 renderRows(globalTasksBuffer);
             }
