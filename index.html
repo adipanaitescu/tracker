@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v07</title>
+    <title>Program Zilnic v09</title>
     <style>
         :root {
             --color-health: #F08209;
@@ -135,7 +135,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v07</h1>
+    <h1>Program Zilnic v08</h1>
 
     <div class="controls">
         <button id="btn-audio-auth">Sunet: Dezactivat</button>
@@ -161,105 +161,132 @@
     </div>
 
     <script>
-        // Sursa reala din Google Sheets (exportata ca CSV)
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQDKIr1CRKpf_7bI9tyF2xfrhqaLYCeiD2hX7KJzxCWgMsg9NsItQqT4XEF9uTlY04687OKJBNowfs/pub?output=csv';
+        // Sursa reala din Google Sheets
+const csvUrl = 'https://google.com';
+
+const backupTasks = [
+    { categorie: "health", interval: "06:00 - 06.30", task: "Trezirea", oraAlerta: "06:00" },
+    { categorie: "health", interval: "06.30 - 07:30", task: "Mers pe jos 1h", oraAlerta: "06:30" },
+    { categorie: "personal", interval: "07:30 - 08.00", task: "Pregatirea pentru munca (dush)", oraAlerta: "07:30" },
+    { categorie: "work", interval: "08:00 - 16.00", task: "Munca", oraAlerta: "08:00" },
+    { categorie: "personal", interval: "16.00 - 17.00", task: "Pregatirea mesei / Mancat", oraAlerta: "16:00" },
+    { categorie: "health", interval: "17.00 - 17.15", task: "Exercitii glezne (seria 1)", oraAlerta: "17:00" },
+    { categorie: "health", interval: "17.15 - 17.30", task: "Exercitii glezne (seria 2)", oraAlerta: "17:15" },
+    { categorie: "health", interval: "17.30 - 17.45", task: "Exercitii glezne (seria 3)", oraAlerta: "17:30" },
+    { categorie: "health", interval: "17.45 - 18.00", task: "Exercitii calisthenics", oraAlerta: "17:45" },
+    { categorie: "health", interval: "18.00 - 18.15", task: "Exercitii musculatura (tractiuni)", oraAlerta: "18:00" },
+    { categorie: "health", interval: "18.15 - 18.30", task: "Exercitii Kegel", oraAlerta: "18:15" },
+    { categorie: "personal", interval: "18.30 - 20.00", task: "Vlad", oraAlerta: "18:30" },
+    { categorie: "personal", interval: "20.00 - 21.00", task: "Pregatirea mesei / Mancat", oraAlerta: "20:00" },
+    { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
+];
+
+const masterCheck = document.getElementById('master-check');
+const tasksBody = document.getElementById('tasks-body');
+let checkedTasksHistory = JSON.parse(localStorage.getItem('saved_tasks_status')) || {};
+
+function renderRows(tasksArray) {
+    if (!tasksBody) return;
+    let htmlBuffer = '';
+    tasksArray.forEach(task => {
+        const safeCat = (task.categorie || 'personal').toString().trim().toLowerCase();
+        const safeInterval = (task.interval || '').toString().trim();
+        const safeTask = (task.task || '').toString().trim();
+        const safeAlert = (task.oraAlerta || '').toString().trim();
         
-        const backupTasks = [
-            { categorie: "health", interval: "06:00 - 06.30", task: "Trezirea", oraAlerta: "06:00" },
-            { categorie: "health", interval: "06.30 - 07:30", task: "Mers pe jos 1h", oraAlerta: "06:30" },
-            { categorie: "personal", interval: "07:30 - 08.00", task: "Pregatirea pentru munca (dush)", oraAlerta: "07:30" },
-            { categorie: "work", interval: "08:00 - 16.00", task: "Munca", oraAlerta: "08:00" },
-            { categorie: "personal", interval: "16.00 - 17.00", task: "Pregatirea mesei / Mancat", oraAlerta: "16:00" },
-            { categorie: "health", interval: "17.00 - 17.15", task: "Exercitii glezne (seria 1)", oraAlerta: "17:00" },
-            { categorie: "health", interval: "17.15 - 17.30", task: "Exercitii glezne (seria 2)", oraAlerta: "17:15" },
-            { categorie: "health", interval: "17.30 - 17.45", task: "Exercitii glezne (seria 3)", oraAlerta: "17:30" },
-            { categorie: "health", interval: "17.45 - 18.00", task: "Exercitii calisthenics", oraAlerta: "17:45" },
-            { categorie: "health", interval: "18.00 - 18.15", task: "Exercitii musculatura (tractiuni)", oraAlerta: "18:00" },
-            { categorie: "health", interval: "18.15 - 18.30", task: "Exercitii Kegel", oraAlerta: "18:15" },
-            { categorie: "personal", interval: "18.30 - 20.00", task: "Vlad", oraAlerta: "18:30" },
-            { categorie: "personal", interval: "20.00 - 21.00", task: "Pregatirea mesei / Mancat", oraAlerta: "20:00" },
-            { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
-        ];
+        const taskKey = `${safeAlert}_${safeTask.replace(/\s+/g, '')}`;
+        const isChecked = checkedTasksHistory[taskKey] ? 'checked' : '';
+        const isDoneClass = checkedTasksHistory[taskKey] ? 'done' : '';
 
-        const masterCheck = document.getElementById('master-check');
-        const tasksBody = document.getElementById('tasks-body');
+        htmlBuffer += `
+            <div class="grid-row cat-${safeCat} ${isDoneClass}" data-key="${taskKey}">
+                <div class="col-time">${safeInterval}</div>
+                <div class="col-task">${safeTask}</div>
+                <div class="col-check"><input type="checkbox" class="task-check" ${isChecked}></div>
+            </div>
+        `;
+    });
+    tasksBody.innerHTML = htmlBuffer;
+    initCheckboxesLogic();
+    updateMasterCheckboxState();
+}
 
-        // Încarcă statusul din LocalStorage sau creează un obiect nou
-        let checkedTasksHistory = JSON.parse(localStorage.getItem('saved_tasks_status')) || {};
+function cleanString(str) {
+    return str ? str.replace(/^"|"$/g, '').trim() : '';
+}
 
-        function renderRows(tasksArray) {
-            if (!tasksBody) return;
-            
-            let htmlBuffer = '';
-            tasksArray.forEach(task => {
-                const safeCat = (task.categorie || 'personal').toString().trim().toLowerCase();
-                const safeInterval = (task.interval || '').toString().trim();
-                const safeTask = (task.task || '').toString().trim();
-                const safeAlert = (task.oraAlerta || '').toString().trim();
-                
-                // Generăm o cheie unică bazată pe oră și nume pentru a ști ce a fost bifat
-                const taskKey = `${safeAlert}_${safeTask.replace(/\s+/g, '')}`;
-                const isChecked = checkedTasksHistory[taskKey] ? 'checked' : '';
-                const isDoneClass = checkedTasksHistory[taskKey] ? 'done' : '';
-
-                htmlBuffer += `
-                    <div class="grid-row cat-${safeCat} ${isDoneClass}" data-key="${taskKey}">
-                        <div class="col-time">${safeInterval}</div>
-                        <div class="col-task">${safeTask}</div>
-                        <div class="col-check">
-                            <input type="checkbox" class="task-check" ${isChecked}>
-                        </div>
-                    </div>
-                `;
+function parseCSVSecure(text) {
+    const lines = text.split(/\r?\n/);
+    const parsedTasks = [];
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        let columns = [], current = '', inQuotes = false;
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') { inQuotes = !inQuotes; }
+            else if (char === ',' && !inQuotes) { columns.push(cleanString(current)); current = ''; }
+            else { current += char; }
+        }
+        columns.push(cleanString(current));
+        if (columns.length >= 3) {
+            parsedTasks.push({
+                categorie: columns[0] || 'personal',
+                interval: columns[1] || '',
+                task: columns[2] || '',
+                oraAlerta: columns[3] || (columns[1] ? columns[1].split('-')[0].trim() : '')
             });
-            
-            tasksBody.innerHTML = htmlBuffer;
-            initCheckboxesLogic();
+        }
+    }
+    return parsedTasks.length > 0 ? parsedTasks : null;
+}
+
+function initCheckboxesLogic() {
+    document.querySelectorAll('.task-check').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const row = this.closest('.grid-row');
+            const taskKey = row.getAttribute('data-key');
+            if (this.checked) { row.classList.add('done'); checkedTasksHistory[taskKey] = true; }
+            else { row.classList.remove('done'); delete checkedTasksHistory[taskKey]; }
+            localStorage.setItem('saved_tasks_status', JSON.stringify(checkedTasksHistory));
             updateMasterCheckboxState();
-        }
+        });
+    });
+}
 
-        function cleanString(str) {
-            if (!str) return '';
-            return str.replace(/^"|"$/g, '').trim();
-        }
+if (masterCheck) {
+    masterCheck.addEventListener('change', function() {
+        document.querySelectorAll('.task-check').forEach(checkbox => {
+            const row = checkbox.closest('.grid-row');
+            const taskKey = row.getAttribute('data-key');
+            checkbox.checked = this.checked;
+            if (this.checked) { row.classList.add('done'); checkedTasksHistory[taskKey] = true; }
+            else { row.classList.remove('done'); delete checkedTasksHistory[taskKey]; }
+        });
+        localStorage.setItem('saved_tasks_status', JSON.stringify(checkedTasksHistory));
+    });
+}
 
-                // Funcția de parsare CSV corectă, capabilă să ignore virgulele din interiorul ghilimelelor
-        function parseCSVSecure(text) {
-            const lines = text.split(/\r?\n/);
-            const parsedTasks = [];
+function updateMasterCheckboxState() {
+    if (!masterCheck) return;
+    const checks = document.querySelectorAll('.task-check');
+    if (checks.length === 0) return;
+    masterCheck.checked = Array.from(checks).every(cb => cb.checked);
+}
 
-            // Presupunem ordinea coloanelor din foaie: Categorie, Interval, Task, OraAlerta
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
+async function fetchTasks() {
+    try {
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error('Eroare retea');
+        const csvText = await response.text();
+        const freshTasks = parseCSVSecure(csvText);
+        renderRows(freshTasks || backupTasks);
+    } catch (error) {
+        console.warn("Eroare incarcare Google Sheets, se folosesc datele de rezerva", error);
+        renderRows(backupTasks);
+    }
+}
 
-                let columns = [];
-                let current = '';
-                let inQuotes = false;
+window.addEventListener('DOMContentLoaded', fetchTasks);
 
-                for (let j = 0; j < line.length; j++) {
-                    const char = line[j];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        columns.push(cleanString(current));
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                columns.push(cleanString(current));
-
-                // Mapăm coloanele pe structura aplicației
-                if (columns.length >= 3) {
-                    parsedTasks.push({
-                        categorie: columns[0] || 'personal',
-                        interval: columns[1] || '',
-                        task: columns[2] || '',
-                        oraAlerta: columns[3] || (columns[1] ? columns[1].split('-')[0].trim() : '')
-                    });
-                }
-            }
-            return parsedTasks.length > 0 ? parsedTasks : null;
-        }
 
