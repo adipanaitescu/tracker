@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v19</title>
+    <title>Program Zilnic v20</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -51,7 +51,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v19</h1>
+    <h1>Program Zilnic v20</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -75,7 +75,6 @@
     </div>
 
     <script>
-        // Adresa URL către Google Sheet-ul tău publicat sub formă de CSV
         const csvUrl = 'https://google.com';
         
         let globalTasksBuffer = []; 
@@ -102,7 +101,6 @@
             { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
         ];
 
-        // Încarcă datele live ocolind mecanismele de cache ale browserului
         async function fetchLiveGoogleData() {
             try {
                 const response = await fetch(`${csvUrl}&cb=${Date.now()}`);
@@ -116,22 +114,24 @@
             }
         }
 
-        // Parsează fișierul CSV obținut din Google Sheet
+        // Optimizat special pentru a elimina ghilimelele automate din formatul exportat de Sheets
         function parseCSV(text) {
-            const linii = text.split(/\r?\n/);
+            // Eliminăm global ghilimelele generate automat de Google Sheets pentru textele cu spații
+            const textCurat = text.replace(/"/g, '');
+            const linii = textCurat.split(/\r?\n/);
             const arrayRezultat = [];
             
-            // i = 1 pentru a trece peste capul de tabel (Categorie, Interval, Task, Ora alerta)
+            // Începem de la i = 1 pentru a ignora capul de tabel (Categorie, Interval etc.)
             for (let i = 1; i < linii.length; i++) {
                 if (!linii[i].trim()) continue;
                 
                 const celule = linii[i].split(',');
                 if (celule.length >= 3) {
                     arrayRezultat.push({
-                        categorie: celule[0].replace(/"/g, '').trim().toLowerCase(),
-                        interval: celule[1].replace(/"/g, '').trim(),
-                        task: celule[2].replace(/"/g, '').trim(),
-                        oraAlerta: celule[3] ? celule[3].replace(/"/g, '').trim() : ""
+                        categorie: celule[0].trim().toLowerCase(),
+                        interval: celule[1].trim(),
+                        task: celule[2].trim(),
+                        oraAlerta: celule[3] ? celule[3].trim() : ""
                     });
                 }
             }
@@ -155,7 +155,6 @@
                 tasksBody.appendChild(row);
             });
 
-            // Evenimente pentru checkbox-uri
             document.querySelectorAll('#tasks-body input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
                     const idx = this.getAttribute('data-index');
@@ -228,7 +227,6 @@
             localStorage.setItem(cheieInLocalStorage, JSON.stringify(istoric));
         }
 
-        // Pornire aplicație
         initCalendar();
         fetchLiveGoogleData();
     </script>
