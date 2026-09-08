@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v15</title>
+    <title>Program Zilnic v16</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -48,7 +48,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v15</h1>
+    <h1>Program Zilnic v16</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -97,11 +97,16 @@
             { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
         ];
 
+        // Formatează o dată de tip obiect Date în format curat YYYY-MM-DD
+        function formateazaDataLocal(obiectData) {
+            const an = obiectData.getFullYear();
+            const luna = String(obiectData.getMonth() + 1).padStart(2, '0');
+            const zi = String(obiectData.getDate()).padStart(2, '0');
+            return `${an}-${luna}-${zi}`;
+        }
+
         function initCalendar() {
-            const acum = new Date();
-            const tzOffset = acum.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(acum - tzOffset)).toISOString().split('T');
-            currentDateString = localISOTime.shift();
+            currentDateString = formateazaDataLocal(new Date());
             
             if (datePicker) {
                 datePicker.value = currentDateString;
@@ -117,9 +122,7 @@
         function schimbaZiua(directie) {
             let d = new Date(currentDateString);
             d.setDate(d.getDate() + directie);
-            const tzOffset = d.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(d - tzOffset)).toISOString().split('T');
-            currentDateString = localISOTime.shift();
+            currentDateString = formateazaDataLocal(d);
             if (datePicker) datePicker.value = currentDateString;
             renderRows(globalTasksBuffer);
         }
@@ -162,7 +165,7 @@
             updateMasterCheckboxState();
         }
 
-         function parseCSVSecure(text) {
+                function parseCSVSecure(text) {
             const lines = text.split(/\r?\n/);
             const parsedTasks = [];
 
@@ -234,7 +237,21 @@
             masterCheck.checked = Array.from(checks).every(cb => cb.checked);
         }
 
-        
+        async function fetchTasks() {
+            initCalendar();
+            try {
+                const response = await fetch(csvUrl, { cache: "no-store" });
+                if (!response.ok) throw new Error('Eroare retea');
+                const csvText = await response.text();
+                const freshTasks = parseCSVSecure(csvText);
+                globalTasksBuffer = freshTasks ? freshTasks : backupTasks;
+                renderRows(globalTasksBuffer);
+            } catch (error) {
+                console.warn("Se folosesc datele de rezerva", error);
+                globalTasksBuffer = backupTasks;
+                renderRows(globalTasksBuffer);
+            }
+        }
         window.addEventListener('DOMContentLoaded', fetchTasks);
     </script>
 </body>
