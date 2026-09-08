@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v14</title>
+    <title>Program Zilnic v15</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -48,7 +48,7 @@
 </head>
 <body>
 
-    <h1>Program Zilnic v14</h1>
+    <h1>Program Zilnic v15</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -234,22 +234,7 @@
             masterCheck.checked = Array.from(checks).every(cb => cb.checked);
         }
 
-        async function fetchTasks() {
-            initCalendar();
-            try {
-                const cacheBusterUrl = csvUrl + "&cache_bust=" + Date.now();
-                const response = await fetch(cacheBusterUrl);
-                if (!response.ok) throw new Error('Eroare retea');
-                const csvText = await response.text();
-                const freshTasks = parseCSVSecure(csvText);
-                globalTasksBuffer = freshTasks ? freshTasks : backupTasks;
-                renderRows(globalTasksBuffer);
-            } catch (error) {
-                console.warn("Se folosesc datele de rezerva", error);
-                globalTasksBuffer = backupTasks;
-                renderRows(globalTasksBuffer);
-            }
-        }
+        
         window.addEventListener('DOMContentLoaded', fetchTasks);
     </script>
 </body>
