@@ -75,7 +75,7 @@
     </div>
 
     <script>
-        const csvUrl = 'https://google.com';
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQDKIr1CRKpf_7bI9tyF2xfrhqaLYCeiD2hX7KJzxCWgMsg9NsItQqT4XEF9uTlY04687OKJBNowfs/pub?output=csv';
         
         let globalTasksBuffer = []; 
         let currentDateString = ""; 
@@ -101,40 +101,60 @@
             { categorie: "personal", interval: "21.00 - 22.00", task: "Chitara / citit / masaj / meditat", oraAlerta: "21:00" }
         ];
 
+        function areValidGoogleSheetUrl(url) {
+            return typeof url === 'string' && url.trim() !== '' && /^https?:\/\//i.test(url.trim());
+        }
+
         async function fetchLiveGoogleData() {
+            if (!areValidGoogleSheetUrl(csvUrl)) {
+                globalTasksBuffer = backupTasks;
+                renderRows(globalTasksBuffer);
+                return;
+            }
+
+            const requestUrl = csvUrl.includes('?') ? `${csvUrl}&cb=${Date.now()}` : `${csvUrl}?cb=${Date.now()}`;
+
             try {
-                const response = await fetch(`${csvUrl}&cb=${Date.now()}`);
+                const response = await fetch(requestUrl, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
                 const dataText = await response.text();
-                globalTasksBuffer = parseCSV(dataText);
+                const parsedTasks = parseCSV(dataText);
+                globalTasksBuffer = Array.isArray(parsedTasks) && parsedTasks.length ? parsedTasks : backupTasks;
                 renderRows(globalTasksBuffer);
             } catch (error) {
-                console.error("Eroare la preluarea datelor, folosim backupTasks:", error);
+                console.warn('Datele live nu au putut fi încărcate, folosim backupTasks.', error);
                 globalTasksBuffer = backupTasks;
                 renderRows(globalTasksBuffer);
             }
         }
 
-        // Optimizat special pentru a elimina ghilimelele automate din formatul exportat de Sheets
         function parseCSV(text) {
-            // Eliminăm global ghilimelele generate automat de Google Sheets pentru textele cu spații
-            const textCurat = text.replace(/"/g, '');
-            const linii = textCurat.split(/\r?\n/);
-            const arrayRezultat = [];
-            
-            // Începem de la i = 1 pentru a ignora capul de tabel (Categorie, Interval etc.)
-            for (let i = 1; i < linii.length; i++) {
-                if (!linii[i].trim()) continue;
-                
-                const celule = linii[i].split(',');
-                if (celule.length >= 3) {
-                    arrayRezultat.push({
-                        categorie: celule[0].trim().toLowerCase(),
-                        interval: celule[1].trim(),
-                        task: celule[2].trim(),
-                        oraAlerta: celule[3] ? celule[3].trim() : ""
-                    });
-                }
+            if (typeof text !== 'string' || !text.trim()) {
+                return backupTasks;
             }
+
+            const textCurat = text.replace(/\uFEFF/g, '').replace(/"/g, '').replace(/\r/g, '');
+            const linii = textCurat.split('\n').map(line => line.trim()).filter(Boolean);
+            const arrayRezultat = [];
+
+            for (let i = 1; i < linii.length; i++) {
+                const celule = linii[i].split(',').map(cell => cell.trim());
+                if (celule.length < 3) continue;
+
+                const [categorie, interval, task, ...rest] = celule;
+                if (!categorie || !interval || !task) continue;
+
+                arrayRezultat.push({
+                    categorie: categorie.toLowerCase(),
+                    interval,
+                    task,
+                    oraAlerta: rest.length ? rest[0] : ""
+                });
+            }
+
             return arrayRezultat.length > 0 ? arrayRezultat : backupTasks;
         }
 
@@ -144,7 +164,7 @@
             const statusSalvat = iaIstoricZiCurenta();
 
             tasks.forEach((item, index) => {
-                const esteBifat = statusSalvat[index] || false;
+                const esteBifat = Boolean(statusSalvat[index]);
                 const row = document.createElement('div');
                 row.className = `grid-row cat-${item.categorie} ${esteBifat ? 'done' : ''}`;
                 row.innerHTML = `
@@ -168,7 +188,7 @@
             actualizeazaMasterCheck();
         }
 
-                function actualizeazaMasterCheck() {
+        function actualizeazaMasterCheck() {
             if (!masterCheck) return;
             const toateCheckboxurile = document.querySelectorAll('#tasks-body input[type="checkbox"]');
             if (toateCheckboxurile.length === 0) { masterCheck.checked = false; return; }
@@ -210,6 +230,9 @@
         }
 
         function schimbaZiua(directie) {
+            if (!currentDateString) {
+                currentDateString = formateazaDataLocal(new Date());
+            }
             let dObj = new Date(currentDateString);
             dObj.setDate(dObj.getDate() + directie);
             currentDateString = formateazaDataLocal(dObj);
@@ -219,12 +242,22 @@
 
         function iaIstoricZiCurenta() {
             const cheieInLocalStorage = "saved_tasks_status_" + currentDateString;
-            return JSON.parse(localStorage.getItem(cheieInLocalStorage)) || {};
+            try {
+                const valoare = localStorage.getItem(cheieInLocalStorage);
+                return valoare ? JSON.parse(valoare) : {};
+            } catch (error) {
+                console.warn('Local storage indisponibil pentru istoricul zilei.', error);
+                return {};
+            }
         }
 
         function salveazaIstoricZiCurenta(istoric) {
             const cheieInLocalStorage = "saved_tasks_status_" + currentDateString;
-            localStorage.setItem(cheieInLocalStorage, JSON.stringify(istoric));
+            try {
+                localStorage.setItem(cheieInLocalStorage, JSON.stringify(istoric));
+            } catch (error) {
+                console.warn('Nu s-a putut salva istoricul în browser.', error);
+            }
         }
 
         initCalendar();
