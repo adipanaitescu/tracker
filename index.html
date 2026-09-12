@@ -20,10 +20,17 @@
             background: #ffffff; padding: 6px 12px; border-radius: 30px; border: 1px solid #e2e8f0;
             box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
-        .archive-controls button { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 5px 10px; color: #475569; }
+        .archive-controls button { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 5px 10px; color: #475569; transition: all 0.2s; }
+        .archive-controls button:hover { color: #1e293b; font-weight: 600; }
+        #btn-today { font-size: 0.9rem; font-weight: 600; color: #3b82f6; }
+        .date-display { font-weight: 700; color: #1e293b; font-size: 0.95rem; min-width: 90px; text-align: center; }
         .archive-controls input[type="date"] { 
-            border: none; font-weight: 700; color: #1e293b; font-family: inherit; 
-            font-size: 0.95rem; outline: none; cursor: pointer;
+            border: none; font-weight: 700; color: transparent; font-family: inherit; 
+            font-size: 1.1rem; outline: none; cursor: pointer; padding: 5px 10px;
+            width: 30px; background-color: transparent;
+        }
+        .archive-controls input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer; color: #475569; opacity: 1;
         }
         .table-container {
             width: 100%; max-width: 550px; background-color: #ffffff; border-radius: 12px;
@@ -55,6 +62,8 @@
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
+        <span id="date-display" class="date-display"></span>
+        <button id="btn-today" title="Astazi">AZI</button>
         <input type="date" id="date-picker" lang="ro-RO">
         <button id="btn-next-day" title="Ziua următoare">▶</button>
     </div>
@@ -216,17 +225,39 @@
             return `${an}-${luna}-${zi}`;
         }
 
+        function updateDateDisplay() {
+            const dateDisplay = document.getElementById('date-display');
+            if (dateDisplay && currentDateString) {
+                const [year, month, day] = currentDateString.split('-');
+                dateDisplay.textContent = `${day}/${month}/${year}`;
+            }
+        }
+
         function initCalendar() {
             currentDateString = formateazaDataLocal(new Date());
+            updateDateDisplay();
             if (datePicker) {
                 datePicker.value = currentDateString;
                 datePicker.addEventListener('change', function() {
                     currentDateString = this.value;
+                    updateDateDisplay();
                     renderRows(globalTasksBuffer);
                 });
             }
-            document.getElementById('btn-prev-day')?.addEventListener('click', () => schimbaZiua(-1));
-            document.getElementById('btn-next-day')?.addEventListener('click', () => schimbaZiua(1));
+            document.getElementById('btn-prev-day')?.addEventListener('click', () => {
+                schimbaZiua(-1);
+                updateDateDisplay();
+            });
+            document.getElementById('btn-next-day')?.addEventListener('click', () => {
+                schimbaZiua(1);
+                updateDateDisplay();
+            });
+            document.getElementById('btn-today')?.addEventListener('click', () => {
+                currentDateString = formateazaDataLocal(new Date());
+                if (datePicker) datePicker.value = currentDateString;
+                updateDateDisplay();
+                renderRows(globalTasksBuffer);
+            });
         }
 
         function schimbaZiua(directie) {
