@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v23</title>
+    <title>Program Zilnic v24</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <h1>Program Zilnic v23</h1>
+    <h1>Program Zilnic v24</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -225,6 +225,35 @@
             }
         }
 
+        function updateTodayButtonState() {
+            const btnToday = document.getElementById('btn-today');
+            if (!btnToday) return;
+
+            const todayString = formateazaDataLocal(new Date());
+            const isToday = currentDateString === todayString;
+            const currentDate = new Date(`${currentDateString}T00:00:00`);
+            const todayDate = new Date(`${todayString}T00:00:00`);
+            const isFuture = currentDate > todayDate;
+            const isPast = currentDate < todayDate;
+
+            btnToday.classList.toggle('is-today', isToday);
+            btnToday.classList.toggle('google-badge-archive', isPast);
+            btnToday.classList.toggle('google-text-blue', isFuture);
+            btnToday.classList.toggle('is-archive', false);
+            btnToday.setAttribute('aria-pressed', String(isToday));
+
+            if (isToday) {
+                btnToday.textContent = 'AZI';
+                btnToday.title = 'Astăzi';
+            } else if (isFuture) {
+                btnToday.textContent = 'VIITOR';
+                btnToday.title = 'Zi din viitor';
+            } else {
+                btnToday.textContent = 'ARHIVĂ';
+                btnToday.title = 'Zi din trecut';
+            }
+        }
+
         function setupAlertToggle() {
             const alertBanner = document.getElementById('alert-banner');
             if (!alertBanner) return;
@@ -262,26 +291,31 @@
                     currentDateString = this.value;
                     updateDateDisplay();
                     renderRows(globalTasksBuffer);
+                    updateTodayButtonState();
                 });
             }
             document.getElementById('btn-prev-day')?.addEventListener('click', () => {
                 schimbaZiua(-1);
                 updateDateDisplay();
+                updateTodayButtonState();
             });
             document.getElementById('btn-next-day')?.addEventListener('click', () => {
                 schimbaZiua(1);
                 updateDateDisplay();
+                updateTodayButtonState();
             });
             document.getElementById('btn-today')?.addEventListener('click', () => {
                 currentDateString = formateazaDataLocal(new Date());
                 if (datePicker) datePicker.value = currentDateString;
                 updateDateDisplay();
+                updateTodayButtonState();
                 renderRows(globalTasksBuffer);
             });
             document.getElementById('btn-refresh')?.addEventListener('click', () => {
                 fetchLiveGoogleData();
             });
             setupAlertToggle();
+            updateTodayButtonState();
         }
 
         function schimbaZiua(directie) {
@@ -293,6 +327,7 @@
             currentDateString = formateazaDataLocal(dObj);
             if (datePicker) datePicker.value = currentDateString;
             renderRows(globalTasksBuffer);
+            updateTodayButtonState();
         }
 
         function iaIstoricZiCurenta() {
