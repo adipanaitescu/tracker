@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v20</title>
+    <title>Program Zilnic v21</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -54,11 +54,18 @@
         .legend { display: flex; gap: 15px; margin-top: 20px; font-size: 0.8rem; font-weight: 600; }
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .bullet { width: 10px; height: 10px; border-radius: 50%; }
+        .status-bar { width: 100%; max-width: 550px; margin: 20px auto 0; text-align: center; }
+        .status-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; font-size: 0.9rem; }
+        .status-bottom { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 10px 0; }
+        .alert-banner { background: #fef3c7; border: 1px solid #fde68a; padding: 8px 15px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; color: #d97706; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        #data-source { color: #059669; font-weight: 600; }
+        #last-updated { color: #64748b; font-size: 0.85rem; }
+        .btn-refresh { background: none; border: none; color: #3b82f6; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; padding: 0; }
     </style>
 </head>
 <body>
 
-    <h1>Program Zilnic v20</h1>
+    <h1>Program Zilnic v21</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -77,17 +84,32 @@
         <div id="tasks-body"></div>
     </div>
 
+    <div id="status-bar" class="status-bar">
+        <div class="status-top">
+            <span id="data-source"></span>
+            <span id="last-updated"></span>
+        </div>
+        <div class="status-bottom">
+            <div id="alert-banner" class="alert-banner">
+                <span>⚠ Alerte active (doar in pagina)</span>
+            </div>
+            <button id="btn-refresh" class="btn-refresh" title="Reîncarcă datele">⟳ Reîncarcă</button>
+        </div>
+    </div>
+
     <div class="legend">
-        <div class="legend-item"><span class="bullet" style="background-color: var(--color-health)"></span> Sănătate & Sport</div>
-        <div class="legend-item"><span class="bullet" style="background-color: var(--color-work)"></span> Muncă / Carieră</div>
-        <div class="legend-item"><span class="bullet" style="background-color: var(--color-personal)"></span> Stil de viață / Personal</div>
+        <div class="legend-item"><span class="bullet" style="background-color: var(--color-health)"></span> Sport</div>
+        <div class="legend-item"><span class="bullet" style="background-color: var(--color-work)"></span> Muncă</div>
+        <div class="legend-item"><span class="bullet" style="background-color: var(--color-personal)"></span> Personal</div>
     </div>
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQDKIr1CRKpf_7bI9tyF2xfrhqaLYCeiD2hX7KJzxCWgMsg9NsItQqT4XEF9uTlY04687OKJBNowfs/pub?output=csv';
         
         let globalTasksBuffer = []; 
-        let currentDateString = ""; 
+        let currentDateString = "";
+        let dataSource = "backupTasks";
+        let lastUpdatedTime = "";
 
         const datePicker = document.getElementById('date-picker');
         const masterCheck = document.getElementById('master-check');
@@ -114,10 +136,24 @@
             return typeof url === 'string' && url.trim() !== '' && /^https?:\/\//i.test(url.trim());
         }
 
+        function updateStatusDisplay() {
+            const dataSourceEl = document.getElementById('data-source');
+            const lastUpdatedEl = document.getElementById('last-updated');
+            
+            if (dataSourceEl) {
+                dataSourceEl.textContent = dataSource === 'google' ? `Date live din Google Sheets - ${globalTasksBuffer.length} task-uri` : 'Date din backupTasks';
+            }
+            if (lastUpdatedEl) {
+                lastUpdatedEl.textContent = lastUpdatedTime ? `actualizat la ${lastUpdatedTime}` : '';
+            }
+        }
+
         async function fetchLiveGoogleData() {
             if (!areValidGoogleSheetUrl(csvUrl)) {
+                dataSource = 'backupTasks';
                 globalTasksBuffer = backupTasks;
                 renderRows(globalTasksBuffer);
+                updateStatusDisplay();
                 return;
             }
 
@@ -132,11 +168,19 @@
                 const dataText = await response.text();
                 const parsedTasks = parseCSV(dataText);
                 globalTasksBuffer = Array.isArray(parsedTasks) && parsedTasks.length ? parsedTasks : backupTasks;
+                dataSource = globalTasksBuffer.length > 0 && globalTasksBuffer !== backupTasks ? 'google' : 'backupTasks';
+                
+                const now = new Date();
+                lastUpdatedTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+                
                 renderRows(globalTasksBuffer);
+                updateStatusDisplay();
             } catch (error) {
                 console.warn('Datele live nu au putut fi încărcate, folosim backupTasks.', error);
+                dataSource = 'backupTasks';
                 globalTasksBuffer = backupTasks;
                 renderRows(globalTasksBuffer);
+                updateStatusDisplay();
             }
         }
 
@@ -257,6 +301,9 @@
                 if (datePicker) datePicker.value = currentDateString;
                 updateDateDisplay();
                 renderRows(globalTasksBuffer);
+            });
+            document.getElementById('btn-refresh')?.addEventListener('click', () => {
+                fetchLiveGoogleData();
             });
         }
 
