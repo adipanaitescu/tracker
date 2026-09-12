@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Program Zilnic v21</title>
+    <title>Program Zilnic v22</title>
     <style>
         :root {
             --color-health: #F08209; --color-work: #8B5CF6; --color-personal: #3B82F6;
@@ -54,18 +54,74 @@
         .legend { display: flex; gap: 15px; margin-top: 20px; font-size: 0.8rem; font-weight: 600; }
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .bullet { width: 10px; height: 10px; border-radius: 50%; }
-        .status-bar { width: 100%; max-width: 550px; margin: 20px auto 0; text-align: center; }
+        .status-bar { width: 100%; max-width: 550px; margin-top: 20px; }
         .status-top { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; font-size: 0.9rem; }
         .status-bottom { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 10px 0; }
-        .alert-banner { background: #fef3c7; border: 1px solid #fde68a; padding: 8px 15px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; color: #d97706; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-        #data-source { color: #059669; font-weight: 600; }
-        #last-updated { color: #64748b; font-size: 0.85rem; }
+        .alert-banner {
+            background-color: #ffffff;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            padding: 6px 16px 6px 12px;
+            border-radius: 100px;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.25px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .alert-banner:hover {
+            background-color: #f8f9fa;
+            color: #1e1f20;
+        }
+        .alert-banner.is-active {
+            background-color: #e6f4ea;
+            border-color: #ceead6;
+            color: #137333;
+        }
+        .alert-banner.is-active:hover {
+            background-color: #d2ebd9;
+        }
+        .btn-icon {
+            font-size: 18px;
+            color: #5f6368;
+        }
+        .alert-banner:hover .btn-icon {
+            color: #1e1f20;
+        }
+        .alert-banner.is-active .btn-icon {
+            color: #137333;
+        }
+        #data-source { color: #137333; background-color: #E6F4EA; padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; display: inline-block; }
+        #last-updated { display: inline-block; }
+        .google-timestamp {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #137333;
+            border-radius: 50%;
+        }
+        .timestamp-text {
+            color: #5f6368;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+            -webkit-font-smoothing: antialiased;
+        }
         .btn-refresh { background: none; border: none; color: #3b82f6; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; padding: 0; }
     </style>
 </head>
 <body>
 
-    <h1>Program Zilnic v21</h1>
+    <h1>Program Zilnic v22</h1>
 
     <div class="archive-controls">
         <button id="btn-prev-day" title="Ziua anterioară">◀</button>
@@ -84,23 +140,24 @@
         <div id="tasks-body"></div>
     </div>
 
-    <div id="status-bar" class="status-bar">
-        <div class="status-top">
-            <span id="data-source"></span>
-            <span id="last-updated"></span>
-        </div>
-        <div class="status-bottom">
-            <div id="alert-banner" class="alert-banner">
-                <span>⚠ Alerte active (doar in pagina)</span>
-            </div>
-            <button id="btn-refresh" class="btn-refresh" title="Reîncarcă datele">⟳ Reîncarcă</button>
-        </div>
-    </div>
-
     <div class="legend">
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-health)"></span> Sport</div>
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-work)"></span> Muncă</div>
         <div class="legend-item"><span class="bullet" style="background-color: var(--color-personal)"></span> Personal</div>
+    </div>
+
+    <div id="status-bar" class="status-bar">
+        <div class="status-top">
+            <span id="data-source"></span>
+            <div id="last-updated"></div>
+        </div>
+        <div class="status-bottom">
+            <div id="alert-banner" class="alert-banner is-active" role="button" tabindex="0" aria-label="Alerte active">
+                <span class="btn-icon">🔔</span>
+                <span class="alert-label">Alerte active</span>
+            </div>
+            <button id="btn-refresh" class="btn-refresh" title="Reîncarcă datele">⟳ Reîncarcă</button>
+        </div>
     </div>
 
     <script>
@@ -144,7 +201,11 @@
                 dataSourceEl.textContent = dataSource === 'google' ? `Date live din Google Sheets - ${globalTasksBuffer.length} task-uri` : 'Date din backupTasks';
             }
             if (lastUpdatedEl) {
-                lastUpdatedEl.textContent = lastUpdatedTime ? `actualizat la ${lastUpdatedTime}` : '';
+                if (lastUpdatedTime) {
+                    lastUpdatedEl.innerHTML = `<div class="google-timestamp"><div class="status-dot"></div><span class="timestamp-text">actualizat la ${lastUpdatedTime}</span></div>`;
+                } else {
+                    lastUpdatedEl.innerHTML = '';
+                }
             }
         }
 
@@ -277,6 +338,33 @@
             }
         }
 
+        function setupAlertToggle() {
+            const alertBanner = document.getElementById('alert-banner');
+            if (!alertBanner) return;
+
+            const label = alertBanner.querySelector('.alert-label');
+
+            const applyAlertState = (isActive) => {
+                alertBanner.classList.toggle('is-active', isActive);
+                alertBanner.setAttribute('aria-label', isActive ? 'Alerte active' : 'Activează alertele');
+                if (label) {
+                    label.textContent = isActive ? 'Alerte active' : 'Activează alertele';
+                }
+            };
+
+            alertBanner.addEventListener('click', () => {
+                const isActive = !alertBanner.classList.contains('is-active');
+                applyAlertState(isActive);
+            });
+
+            alertBanner.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    alertBanner.click();
+                }
+            });
+        }
+
         function initCalendar() {
             currentDateString = formateazaDataLocal(new Date());
             updateDateDisplay();
@@ -305,6 +393,7 @@
             document.getElementById('btn-refresh')?.addEventListener('click', () => {
                 fetchLiveGoogleData();
             });
+            setupAlertToggle();
         }
 
         function schimbaZiua(directie) {
